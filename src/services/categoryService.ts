@@ -11,7 +11,13 @@ export const categoryService = {
    * @returns Promise with array of categories
    */
   getAll: async (): Promise<Category[]> => {
-    return api.get<Category[]>(CATEGORIES_ENDPOINT);
+    try {
+      const response = await api.get<Category[]>(CATEGORIES_ENDPOINT);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
   },
 
   /**
@@ -20,7 +26,13 @@ export const categoryService = {
    * @returns Promise with category data
    */
   getById: async (id: number): Promise<Category> => {
-    return api.get<Category>(`${CATEGORIES_ENDPOINT}/${id}`);
+    try {
+      const response = await api.get<Category>(`${CATEGORIES_ENDPOINT}/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching category ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -29,7 +41,13 @@ export const categoryService = {
    * @returns Promise with created category
    */
   create: async (data: CategoryFormData): Promise<Category> => {
-    return api.post<Category>(CATEGORIES_ENDPOINT, data);
+    try {
+      const response = await api.post<Category>(CATEGORIES_ENDPOINT, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating category:', error);
+      throw error;
+    }
   },
 
   /**
@@ -39,7 +57,13 @@ export const categoryService = {
    * @returns Promise with updated category
    */
   update: async (id: number, data: CategoryFormData): Promise<Category> => {
-    return api.put<Category>(`${CATEGORIES_ENDPOINT}/${id}`, data);
+    try {
+      const response = await api.put<Category>(`${CATEGORIES_ENDPOINT}/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating category ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -48,7 +72,12 @@ export const categoryService = {
    * @returns Promise with no content
    */
   delete: async (id: number): Promise<void> => {
-    return api.delete<void>(`${CATEGORIES_ENDPOINT}/${id}`);
+    try {
+      await api.delete<void>(`${CATEGORIES_ENDPOINT}/${id}`);
+    } catch (error) {
+      console.error(`Error deleting category ${id}:`, error);
+      throw error;
+    }
   },
 };
 

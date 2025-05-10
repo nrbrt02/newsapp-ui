@@ -1,3 +1,4 @@
+// src/routes/AppRoutes.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import MainLayout from '../layouts/MainLayout';
@@ -15,11 +16,14 @@ const DashboardPage = lazy(() => import('../features/dashboard/Dashboard'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('../pages/NotFound'));
 
-// Categories feature
+// Categories feature - import the default export
 const CategoryList = lazy(() => import('../features/categories/CategoryList'));
 const CategoryDetails = lazy(() => import('../features/categories/CategoryDetails'));
 const CreateCategory = lazy(() => import('../features/categories/CreateCategory'));
 const UpdateCategory = lazy(() => import('../features/categories/UpdateCategory'));
+
+// Tags feature
+const TagList = lazy(() => import('../features/tags/TagList'));
 
 import { ROLES } from '../utils/constants';
 
@@ -64,6 +68,11 @@ const AppRoutes = () => {
                 </PrivateRoute>
               } 
             />
+          </Route>
+
+          {/* Tags routes */}
+          <Route path="tags">
+            <Route index element={<TagList />} />
           </Route>
         </Route>
 

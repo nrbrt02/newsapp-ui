@@ -2,11 +2,11 @@ import React from 'react';
 import { format } from 'date-fns';
 import type { Category } from '../../types/categories.types';
 
-interface CategoryDetailsProps {
+interface CategoryDetailsModalProps {
   category: Category;
 }
 
-const CategoryDetails: React.FC<CategoryDetailsProps> = ({ category }) => {
+const CategoryDetailsModal: React.FC<CategoryDetailsModalProps> = ({ category }) => {
   const formattedDate = (dateString: string) => {
     return format(new Date(dateString), 'MMMM dd, yyyy, h:mm a');
   };
@@ -45,4 +45,4 @@ const CategoryDetails: React.FC<CategoryDetailsProps> = ({ category }) => {
   );
 };
 
-export default CategoryDetails;
+export default CategoryDetailsModal;

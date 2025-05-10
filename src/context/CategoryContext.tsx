@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { categoryService } from '../services/categoryService';
 import type { Category, CategoryFormData } from '../types/categories.types';
 
-// Define the context shape
 interface CategoryContextType {
   categories: Category[];
   loading: boolean;
@@ -15,59 +15,67 @@ interface CategoryContextType {
   clearError: () => void;
 }
 
-// Create the context
 const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
-// Define the props for the provider
 interface CategoryProviderProps {
   children: ReactNode;
 }
 
-// Create the provider component
 export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
-  // Fetch all categories
-  const fetchCategories = async () => {
+  // Fetch all categories - memoized to prevent recreating on every render
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await categoryService.getAll();
       setCategories(data);
-      return data;
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch categories');
-      return [];
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch categories';
+      setError(errorMessage);
+      console.error('Error fetching categories:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Fetch a single category by ID
+  // Initialize categories only once
+  useEffect(() => {
+    if (!initialized) {
+      fetchCategories();
+      setInitialized(true);
+    }
+  }, [initialized, fetchCategories]);
+
+  // Rest of the functions remain the same...
   const fetchCategoryById = async (id: number) => {
     setLoading(true);
     setError(null);
     try {
       const data = await categoryService.getById(id);
-      // Update the category in the list if it exists
       const updatedCategories = [...categories];
       const index = updatedCategories.findIndex(c => c.id === id);
       if (index !== -1) {
         updatedCategories[index] = data;
         setCategories(updatedCategories);
+      } else {
+        setCategories([...categories, data]);
       }
       return data;
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch category');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch category';
+      setError(errorMessage);
+      console.error('Error fetching category:', err);
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Create a new category
   const createCategory = async (data: CategoryFormData) => {
     setLoading(true);
     setError(null);
@@ -76,14 +84,15 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
       setCategories([...categories, newCategory]);
       return newCategory;
     } catch (err: any) {
-      setError(err.message || 'Failed to create category');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create category';
+      setError(errorMessage);
+      console.error('Error creating category:', err);
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Update an existing category
   const updateCategory = async (id: number, data: CategoryFormData) => {
     setLoading(true);
     setError(null);
@@ -95,14 +104,15 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
       setCategories(updatedCategories);
       return updatedCategory;
     } catch (err: any) {
-      setError(err.message || 'Failed to update category');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update category';
+      setError(errorMessage);
+      console.error('Error updating category:', err);
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete a category
   const deleteCategory = async (id: number) => {
     setLoading(true);
     setError(null);
@@ -111,24 +121,19 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
       setCategories(categories.filter(category => category.id !== id));
       return true;
     } catch (err: any) {
-      setError(err.message || 'Failed to delete category');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete category';
+      setError(errorMessage);
+      console.error('Error deleting category:', err);
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // Clear any error
   const clearError = () => {
     setError(null);
   };
 
-  // Fetch categories on component mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // Create the context value
   const value: CategoryContextType = {
     categories,
     loading,
@@ -148,59 +153,10 @@ export const CategoryProvider: React.FC<CategoryProviderProps> = ({ children }) 
   );
 };
 
-// Create a custom hook to use the category context
 export const useCategories = () => {
   const context = useContext(CategoryContext);
   if (context === undefined) {
     throw new Error('useCategories must be used within a CategoryProvider');
   }
   return context;
-};
-
-// Custom hook to fetch and use a single category
-export const useCategory = (id: number) => {
-  const context = useContext(CategoryContext);
-  if (context === undefined) {
-    throw new Error('useCategory must be used within a CategoryProvider');
-  }
-  
-  const [category, setCategory] = useState<Category | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  
-  useEffect(() => {
-    const loadCategory = async () => {
-      setIsLoading(true);
-      setIsError(false);
-      
-      // First check if we already have it in context
-      const existingCategory = context.categories.find(c => c.id === id);
-      
-      if (existingCategory) {
-        setCategory(existingCategory);
-        setIsLoading(false);
-      } else {
-        try {
-          const result = await context.fetchCategoryById(id);
-          if (result) {
-            setCategory(result);
-          } else {
-            setIsError(true);
-          }
-        } catch (err) {
-          setIsError(true);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    loadCategory();
-  }, [context, id]);
-  
-  return {
-    data: category,
-    isLoading,
-    isError
-  };
 };

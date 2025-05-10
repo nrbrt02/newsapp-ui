@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { FiEdit, FiTrash2, FiInfo } from 'react-icons/fi';
-import type { Category } from '../../types/categories.types';
-import Modal from './Modal';
-import CategoryForm from './CategoryForm';
-import type { CategoryFormData } from '../../types/categories.types';
-import { useCategories } from '../../context/CategoryContext';
+import type { Tag } from '../../types/tag.types';
+import Modal from '../categories/Modal';
+import TagForm from './TagForm';
+import type { TagFormData } from '../../types/tag.types';
+import { useTags } from '../../context/TagContext';
 import { useToast } from '../../context/ToastContext';
 
-interface CategoryItemProps {
-  category: Category;
+interface TagItemProps {
+  tag: Tag;
   onDelete: (id: number) => void;
-  onViewDetails: (category: Category) => void;
+  onViewDetails: (tag: Tag) => void;
 }
 
-const CategoryItem: React.FC<CategoryItemProps> = ({ category, onDelete, onViewDetails }) => {
+const TagItem: React.FC<TagItemProps> = ({ tag, onDelete, onViewDetails }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { updateCategory } = useCategories();
+  const { updateTag } = useTags();
   const { showToast } = useToast();
 
   const formattedDate = (dateString: string) => {
@@ -28,35 +28,35 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, onDelete, onViewD
     setShowEditModal(true);
   };
 
-  const handleUpdateCategory = async (data: CategoryFormData) => {
+  const handleUpdateTag = async (data: TagFormData) => {
     setIsUpdating(true);
-    const result = await updateCategory(category.id, data);
+    const result = await updateTag(tag.id, data);
     setIsUpdating(false);
     
     if (result) {
       setShowEditModal(false);
-      showToast('Category updated successfully', 'success');
+      showToast('Tag updated successfully', 'success');
     } else {
-      showToast('Failed to update category', 'error');
+      showToast('Failed to update tag', 'error');
     }
   };
 
   return (
     <>
       <div className="bg-white rounded-lg shadow-md p-4 mb-4 transition-all hover:shadow-lg">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-xl font-semibold text-gray-800">{category.name}</h3>
-            <p className="text-gray-600 mt-2">{category.description}</p>
-            <div className="text-sm text-gray-500 mt-3">
-              <p>Created: {formattedDate(category.createdAt)}</p>
-              <p>Last updated: {formattedDate(category.updatedAt)}</p>
+            <h3 className="text-lg font-semibold text-gray-800">{tag.name}</h3>
+            <div className="text-sm text-gray-500 mt-1">
+              <span>Created: {formattedDate(tag.createdAt)}</span>
+              <span className="mx-2">•</span>
+              <span>Updated: {formattedDate(tag.updatedAt)}</span>
             </div>
           </div>
           
           <div className="flex space-x-2">
             <button
-              onClick={() => onViewDetails(category)}
+              onClick={() => onViewDetails(tag)}
               className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
               title="View Details"
             >
@@ -70,7 +70,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, onDelete, onViewD
               <FiEdit className="text-xl" />
             </button>
             <button 
-              onClick={() => onDelete(category.id)}
+              onClick={() => onDelete(tag.id)}
               className="p-2 text-red-600 hover:text-red-800 transition-colors"
               title="Delete"
             >
@@ -80,16 +80,16 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, onDelete, onViewD
         </div>
       </div>
 
-      {/* Edit Category Modal */}
+      {/* Edit Tag Modal */}
       <Modal 
         isOpen={showEditModal} 
         onClose={() => setShowEditModal(false)}
-        title={`Edit Category: ${category.name}`}
+        title={`Edit Tag: ${tag.name}`}
       >
         <div className="p-6">
-          <CategoryForm 
-            initialData={category}
-            onSubmit={handleUpdateCategory} 
+          <TagForm 
+            initialData={tag}
+            onSubmit={handleUpdateTag} 
             isSubmitting={isUpdating} 
           />
         </div>
@@ -98,4 +98,4 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, onDelete, onViewD
   );
 };
 
-export default CategoryItem;
+export default TagItem;

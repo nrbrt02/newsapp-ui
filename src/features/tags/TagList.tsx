@@ -1,108 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FiPlus, FiAlertCircle, FiLoader } from 'react-icons/fi';
-import { useCategories } from '../../context/CategoryContext';
+import { useTags } from '../../context/TagContext';
 import { useToast } from '../../context/ToastContext';
-import CategoryItem from './CategoryItem';
-import Modal from './Modal';
-import CategoryForm from './CategoryForm';
-import CategoryDetails from './CategoryDetails';
-import type { CategoryFormData, Category } from '../../types/categories.types';
+import TagItem from './TagItem';
+import Modal from '../categories/Modal';
+import TagForm from './TagForm';
+import TagDetailsModal from './TagDetailsModal';
+import type { TagFormData, Tag } from '../../types/tag.types';
+import { useAuth } from '../../hooks/useAuth';
 
-const CategoryList: React.FC = () => {
-  const { categories, loading, error, deleteCategory, createCategory, fetchCategories } = useCategories();
+const TagList: React.FC = () => {
+  const { tags, loading, error, deleteTag, createTag } = useTags();
   const { showToast } = useToast();
+  const { user } = useAuth();
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Remove the useEffect that was causing infinite loops
-  // The CategoryContext already handles initial fetching
-
   const handleDeleteClick = (id: number) => {
-    setCategoryToDelete(id);
+    setTagToDelete(id);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
-    if (categoryToDelete) {
+    if (tagToDelete) {
       setIsDeleting(true);
-      const success = await deleteCategory(categoryToDelete);
+      const success = await deleteTag(tagToDelete);
       setIsDeleting(false);
       if (success) {
         setShowDeleteModal(false);
-        setCategoryToDelete(null);
-        showToast('Category deleted successfully', 'success');
+        setTagToDelete(null);
+        showToast('Tag deleted successfully', 'success');
       } else {
-        showToast('Failed to delete category', 'error');
+        showToast('Failed to delete tag', 'error');
       }
     }
   };
 
   const cancelDelete = () => {
     setShowDeleteModal(false);
-    setCategoryToDelete(null);
+    setTagToDelete(null);
   };
 
-  const handleCreateCategory = async (data: CategoryFormData) => {
+  const handleCreateTag = async (data: TagFormData) => {
     setIsCreating(true);
-    const result = await createCategory(data);
+    const result = await createTag(data);
     setIsCreating(false);
     
     if (result) {
       setShowCreateModal(false);
-      showToast('Category created successfully', 'success');
+      showToast('Tag created successfully', 'success');
     } else {
-      showToast('Failed to create category', 'error');
+      showToast('Failed to create tag', 'error');
     }
   };
 
-  const handleViewDetails = (category: Category) => {
-    setSelectedCategory(category);
+  const handleViewDetails = (tag: Tag) => {
+    setSelectedTag(tag);
     setShowDetailsModal(true);
   };
 
-  if (loading && categories.length === 0) {
+  if (loading && tags.length === 0) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <FiLoader className="animate-spin text-blue-600 text-4xl" />
-        <span className="ml-2 text-gray-700">Loading categories...</span>
+        <span className="ml-2 text-gray-700">Loading tags...</span>
       </div>
     );
   }
 
-  if (error && categories.length === 0) {
+  if (error && tags.length === 0) {
     return (
       <div className="flex justify-center items-center min-h-[400px] text-red-500">
         <FiAlertCircle className="text-3xl mr-2" />
-        <span>Error loading categories: {error}</span>
+        <span>Error loading tags: {error}</span>
       </div>
     );
   }
+
+  const canCreateTag = user?.role === 'ADMIN' || user?.role === 'WRITER';
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
-        >
-          <FiPlus className="mr-1" />
-          Add Category
-        </button>
+        <h1 className="text-2xl font-bold text-gray-800">Tags</h1>
+        {canCreateTag && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+          >
+            <FiPlus className="mr-1" />
+            Add Tag
+          </button>
+        )}
       </div>
 
-      {categories.length > 0 ? (
+      {tags.length > 0 ? (
         <div className="space-y-4">
-          {categories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              category={category}
+          {tags.map((tag) => (
+            <TagItem
+              key={tag.id}
+              tag={tag}
               onDelete={handleDeleteClick}
               onViewDetails={handleViewDetails}
             />
@@ -110,41 +113,43 @@ const CategoryList: React.FC = () => {
         </div>
       ) : (
         <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No categories found.</p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Create your first category
-          </button>
+          <p className="text-gray-500">No tags found.</p>
+          {canCreateTag && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Create your first tag
+            </button>
+          )}
         </div>
       )}
 
-      {/* Create Category Modal */}
+      {/* Create Tag Modal */}
       <Modal 
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)}
-        title="Create New Category"
+        title="Create New Tag"
       >
         <div className="p-6">
-          <CategoryForm 
-            onSubmit={handleCreateCategory} 
+          <TagForm 
+            onSubmit={handleCreateTag} 
             isSubmitting={isCreating} 
           />
         </div>
       </Modal>
 
       {/* View Details Modal */}
-      {selectedCategory && (
+      {selectedTag && (
         <Modal 
           isOpen={showDetailsModal} 
           onClose={() => {
             setShowDetailsModal(false);
-            setSelectedCategory(null);
+            setSelectedTag(null);
           }}
-          title="Category Details"
+          title="Tag Details"
         >
-          <CategoryDetails category={selectedCategory} />
+          <TagDetailsModal tag={selectedTag} />
         </Modal>
       )}
 
@@ -156,7 +161,7 @@ const CategoryList: React.FC = () => {
       >
         <div className="p-6">
           <p className="mb-6">
-            Are you sure you want to delete this category? This action cannot be undone.
+            Are you sure you want to delete this tag? This action cannot be undone.
           </p>
           <div className="flex justify-end space-x-3">
             <button
@@ -180,4 +185,4 @@ const CategoryList: React.FC = () => {
   );
 };
 
-export default CategoryList;
+export default TagList;
