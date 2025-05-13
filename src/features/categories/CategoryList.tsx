@@ -6,7 +6,6 @@ import { useToast } from '../../context/ToastContext';
 import CategoryItem from './CategoryItem';
 import Modal from './Modal';
 import CategoryForm from './CategoryForm';
-import CategoryDetails from './CategoryDetails';
 import SearchBar from '../../components/ui/SearchBar';
 import Pagination from '../../components/ui/Pagination';
 import type { CategoryFormData, Category } from '../../types/categories.types';

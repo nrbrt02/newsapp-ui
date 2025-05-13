@@ -7,7 +7,8 @@ import {
   logout,
   getUserProfile,
   updateProfile,
-  setInitialAuthState
+  setInitialAuthState,
+  clearError
 } from '../features/auth/authSlice';
 import type { 
   LoginRequest, 
@@ -69,6 +70,10 @@ export const useAuth = () => {
     dispatch(logout());
   };
 
+  const resetError = () => {
+    dispatch(clearError());
+  };
+
   return {
     user,
     token,
@@ -80,5 +85,6 @@ export const useAuth = () => {
     fetchUserProfile,
     updateUserProfile,
     logout: logoutUser,
+    clearError: resetError,
   };
 };

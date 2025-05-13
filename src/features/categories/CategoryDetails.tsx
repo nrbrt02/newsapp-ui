@@ -9,7 +9,6 @@ import Pagination from '../../components/ui/Pagination';
 import { useArticle } from '../../hooks/useArticle';
 import ArticleCard from '../../components/article/ArticleCard';
 import type { Category } from '../../types/categories.types';
-import CategoryDetailsModal from './CategoryDetailsModal';
 
 const ITEMS_PER_PAGE = 8; // Articles per page
 

@@ -6,7 +6,7 @@ import type { Tag } from '../../types/tag.types';
 
 interface TagDetailsModalProps {
   tag: Tag;
-  articleCount: any[]
+  articleCount: any[];
 }
 
 const TagDetailsModal: React.FC<TagDetailsModalProps> = ({ tag }) => {

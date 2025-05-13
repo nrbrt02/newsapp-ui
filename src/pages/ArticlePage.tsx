@@ -22,7 +22,7 @@ const ArticlePage = () => {
     if (article && user) {
       setIsUserAuthor(article.author.id === user.id || user.role === 'ADMIN');
     }
-  }, [article, user]);
+  }, []);
 
   if (isLoading) {
     return (

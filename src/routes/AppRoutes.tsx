@@ -25,6 +25,12 @@ const UpdateCategory = lazy(() => import('../features/categories/UpdateCategory'
 // Tags feature
 const TagList = lazy(() => import('../features/tags/TagList'));
 
+// Users feature
+const UserList = lazy(() => import('../features/users/UserList'));
+const UserDetails = lazy(() => import('../features/users/UserDetails'));
+const UserCreate = lazy(() => import('../features/users/UserCreate'));
+const UserEdit = lazy(() => import('../features/users/UserEdit'));
+
 import { ROLES } from '../utils/constants';
 
 const AppRoutes = () => {
@@ -73,6 +79,35 @@ const AppRoutes = () => {
           {/* Tags routes */}
           <Route path="tags">
             <Route index element={<TagList />} />
+          </Route>
+
+          {/* Users routes */}
+          <Route path="users">
+            <Route 
+              index 
+              element={
+                <PrivateRoute requiredRole={[ROLES.ADMIN]}>
+                  <UserList />
+                </PrivateRoute>
+              } 
+            />
+            <Route path=":id" element={<UserDetails />} />
+            <Route 
+              path="create" 
+              element={
+                <PrivateRoute requiredRole={[ROLES.ADMIN]}>
+                  <UserCreate />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="edit/:id" 
+              element={
+                <PrivateRoute requiredRole={[ROLES.ADMIN]}>
+                  <UserEdit />
+                </PrivateRoute>
+              } 
+            />
           </Route>
         </Route>
 

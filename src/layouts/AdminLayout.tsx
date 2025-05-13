@@ -87,13 +87,13 @@ const AdminLayout = () => {
               </div>
               
               <Link 
-                to="/admin/users" 
-                className="flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-md"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <FiUsers size={18} className="mr-3" />
-                Users
-              </Link>
+      to="/admin/users" 
+      className="flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-md"
+      onClick={() => setSidebarOpen(false)}
+    >
+      <FiUsers size={18} className="mr-3" />
+      Users
+    </Link>
               
               <Link 
                 to="/admin/categories" 
