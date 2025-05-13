@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/features/categories/CategoryList.tsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { FiPlus, FiAlertCircle, FiLoader } from 'react-icons/fi';
 import { useCategories } from '../../context/CategoryContext';
 import { useToast } from '../../context/ToastContext';
@@ -6,10 +7,15 @@ import CategoryItem from './CategoryItem';
 import Modal from './Modal';
 import CategoryForm from './CategoryForm';
 import CategoryDetails from './CategoryDetails';
+import SearchBar from '../../components/ui/SearchBar';
+import Pagination from '../../components/ui/Pagination';
 import type { CategoryFormData, Category } from '../../types/categories.types';
+import CategoryDetailsModal from './CategoryDetailsModal';
+
+const ITEMS_PER_PAGE = 10;
 
 const CategoryList: React.FC = () => {
-  const { categories, loading, error, deleteCategory, createCategory, fetchCategories } = useCategories();
+  const { categories, loading, error, deleteCategory, createCategory } = useCategories();
   const { showToast } = useToast();
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -19,9 +25,38 @@ const CategoryList: React.FC = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Search and pagination states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
 
-  // Remove the useEffect that was causing infinite loops
-  // The CategoryContext already handles initial fetching
+  // Filter categories based on search term
+  const filteredCategories = useMemo(() => {
+    return categories.filter(category => 
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [categories, searchTerm]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCategories.length / ITEMS_PER_PAGE);
+  const paginatedCategories = useMemo(() => {
+    const startIndex = currentPage * ITEMS_PER_PAGE;
+    return filteredCategories.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredCategories, currentPage]);
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleDeleteClick = (id: number) => {
     setCategoryToDelete(id);
@@ -97,26 +132,50 @@ const CategoryList: React.FC = () => {
         </button>
       </div>
 
-      {categories.length > 0 ? (
-        <div className="space-y-4">
-          {categories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              category={category}
-              onDelete={handleDeleteClick}
-              onViewDetails={handleViewDetails}
-            />
-          ))}
+      {/* Search Bar */}
+      <div className="mb-6">
+        <SearchBar 
+          onSearch={handleSearch} 
+          placeholder="Search categories..." 
+          initialValue={searchTerm}
+        />
+      </div>
+
+      {filteredCategories.length > 0 ? (
+        <div>
+          <div className="space-y-4 mb-6">
+            {paginatedCategories.map((category) => (
+              <CategoryItem
+                key={category.id}
+                category={category}
+                onDelete={handleDeleteClick}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       ) : (
         <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No categories found.</p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Create your first category
-          </button>
+          {searchTerm ? (
+            <p className="text-gray-500">No categories found matching "{searchTerm}".</p>
+          ) : (
+            <>
+              <p className="text-gray-500">No categories found.</p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Create your first category
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -136,17 +195,17 @@ const CategoryList: React.FC = () => {
 
       {/* View Details Modal */}
       {selectedCategory && (
-        <Modal 
-          isOpen={showDetailsModal} 
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedCategory(null);
-          }}
-          title="Category Details"
-        >
-          <CategoryDetails category={selectedCategory} />
-        </Modal>
-      )}
+  <Modal 
+    isOpen={showDetailsModal} 
+    onClose={() => {
+      setShowDetailsModal(false);
+      setSelectedCategory(null);
+    }}
+    title="Category Details"
+  >
+    <CategoryDetailsModal category={selectedCategory} />
+  </Modal>
+)}
 
       {/* Delete Confirmation Modal */}
       <Modal 

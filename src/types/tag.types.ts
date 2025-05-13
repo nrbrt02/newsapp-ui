@@ -1,6 +1,8 @@
 export interface Tag {
   id: number;
   name: string;
+  articleCount: any;
+  createdBy: any;
   createdAt: string;
   updatedAt: string;
 }

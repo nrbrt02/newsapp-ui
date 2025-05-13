@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/features/tags/TagList.tsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { FiPlus, FiAlertCircle, FiLoader } from 'react-icons/fi';
 import { useTags } from '../../context/TagContext';
 import { useToast } from '../../context/ToastContext';
@@ -6,8 +7,12 @@ import TagItem from './TagItem';
 import Modal from '../categories/Modal';
 import TagForm from './TagForm';
 import TagDetailsModal from './TagDetailsModal';
+import SearchBar from '../../components/ui/SearchBar';
+import Pagination from '../../components/ui/Pagination';
 import type { TagFormData, Tag } from '../../types/tag.types';
 import { useAuth } from '../../hooks/useAuth';
+
+const ITEMS_PER_PAGE = 10;
 
 const TagList: React.FC = () => {
   const { tags, loading, error, deleteTag, createTag } = useTags();
@@ -21,6 +26,37 @@ const TagList: React.FC = () => {
   const [tagToDelete, setTagToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Search and pagination states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Filter tags based on search term
+  const filteredTags = useMemo(() => {
+    return tags.filter(tag => 
+      tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [tags, searchTerm]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTags.length / ITEMS_PER_PAGE);
+  const paginatedTags = useMemo(() => {
+    const startIndex = currentPage * ITEMS_PER_PAGE;
+    return filteredTags.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredTags, currentPage]);
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleDeleteClick = (id: number) => {
     setTagToDelete(id);
@@ -100,27 +136,51 @@ const TagList: React.FC = () => {
         )}
       </div>
 
-      {tags.length > 0 ? (
-        <div className="space-y-4">
-          {tags.map((tag) => (
-            <TagItem
-              key={tag.id}
-              tag={tag}
-              onDelete={handleDeleteClick}
-              onViewDetails={handleViewDetails}
-            />
-          ))}
+      {/* Search Bar */}
+      <div className="mb-6">
+        <SearchBar 
+          onSearch={handleSearch} 
+          placeholder="Search tags..." 
+          initialValue={searchTerm}
+        />
+      </div>
+
+      {filteredTags.length > 0 ? (
+        <div>
+          <div className="space-y-4 mb-6">
+            {paginatedTags.map((tag) => (
+              <TagItem
+                key={tag.id}
+                tag={tag}
+                onDelete={handleDeleteClick}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       ) : (
         <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No tags found.</p>
-          {canCreateTag && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Create your first tag
-            </button>
+          {searchTerm ? (
+            <p className="text-gray-500">No tags found matching "{searchTerm}".</p>
+          ) : (
+            <>
+              <p className="text-gray-500">No tags found.</p>
+              {canCreateTag && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Create your first tag
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
