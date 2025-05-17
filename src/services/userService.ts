@@ -11,6 +11,26 @@ export const getAllUsers = async (page = 0, size = 10): Promise<any> => {
   }
 };
 
+
+export const createUser = async (userData: {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  profilePic?: string | null;
+  role: string;
+  isActive: boolean;
+  password: string;
+}): Promise<User> => {
+  try {
+    const response = await api.post('/users', userData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Get user by ID
 export const getUserById = async (id: number): Promise<User> => {
   try {

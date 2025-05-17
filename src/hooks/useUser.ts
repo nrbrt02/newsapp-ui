@@ -9,7 +9,16 @@ import {
   clearUser,
   clearError
 } from '../features/users/usersSlice';
-import type { UserUpdateRequest } from '../types/user.types';
+import type { UserUpdateRequest, UserCreateRequest } from '../types/user.types';
+import { 
+  getAllUsers, 
+  getUserById, 
+  getUserProfile, 
+  updateUser, 
+  deleteUser, 
+  changeUserRole,
+  createUser
+} from '../services/userService';
 
 export const useUser = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -40,6 +49,16 @@ export const useUser = () => {
     }
   };
   
+  const createUserHandler = async (userData: UserCreateRequest) => {
+    try {
+      const newUser = await createUser(userData);
+      await getUsers(currentPage);
+      return newUser;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const updateUser = async (id: number, userData: UserUpdateRequest) => {
     try {
       const result = await dispatch(updateUserById({ id, userData })).unwrap();
@@ -87,6 +106,7 @@ export const useUser = () => {
     updateUser,
     deleteUser,
     changeUserRole,
+    createUser: createUserHandler,
     resetUser,
     resetError
   };

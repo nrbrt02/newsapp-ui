@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FiPlus, FiAlertCircle, FiSearch, FiX } from 'react-icons/fi';
+import { useState, useEffect  } from 'react';
+import { FiPlus, FiAlertCircle, FiLoader } from 'react-icons/fi';
 import { useUser } from '../../hooks/useUser';
 import UserItem from './UserItem';
-import ConfirmModal from '../../components/ui/ConfirmModal';
+import Modal from '../../components/ui/Modal';
+import UserForm from './UserForm';
+import UserDetailsModal from './UserDetailsModal';
+import SearchBar from '../../components/ui/SearchBar';
+import Pagination from '../../components/ui/Pagination';
+import { useAuth } from '../../hooks/useAuth';
+import type { User, UserCreateRequest, UserUpdateRequest } from '../../types/user.types';
+import type { UserFormData } from './UserForm';
+import { useToast } from '../../context/ToastContext';
+
 
 const UserList = () => {
   const { 
@@ -13,18 +21,26 @@ const UserList = () => {
     totalPages = 0,
     currentPage = 0,
     getUsers, 
-    deleteUser 
+    deleteUser,
+    createUser,
+    updateUser
   } = useUser();
-  
+  const { showToast } = useToast();
+  const { user: currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     getUsers();
   }, []);
 
-   const handlePageChange = (page: number) => {
+  const handlePageChange = (page: number) => {
     getUsers(page);
   };
 
@@ -35,6 +51,7 @@ const UserList = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       setIsDeleting(true);
+      showToast('User deleted successfully', 'success');
       await deleteUser(userToDelete);
       setIsDeleting(false);
       setUserToDelete(null);
@@ -45,73 +62,104 @@ const UserList = () => {
     setUserToDelete(null);
   };
 
-  // Filter users based on search term - add null check
-  const filteredUsers = users ? 
-    (searchTerm
-      ? users.filter(user => 
-          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      : users)
-    : [];
+const handleCreateUser = async (data: UserFormData) => {
+  try {
+    setIsCreating(true);
+    const createData: UserCreateRequest = {
+      username: data.username,
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      profilePic: data.profilePic,
+      role: data.role,
+      isActive: data.isActive,
+      password: data.password || '',
+    };
+    await createUser(createData);
+    showToast('User created successfully', 'success');
+    await getUsers();
+    setShowCreateModal(false);
+  } catch (error) {
+    showToast('Failed to create user', 'error');
+  } finally {
+    setIsCreating(false);
+  }
+};
 
-  if (isLoading && (!users || users.length === 0)) {
+const handleUpdateUser = async (data: UserFormData) => {
+  if (!editingUser) return;
+  
+  try {
+    setIsUpdating(true);
+    const updateData: UserUpdateRequest = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      profilePic: data.profilePic,
+      role: data.role,
+      isActive: data.isActive,
+      ...(data.password ? { password: data.password } : {}),
+    };
+    await updateUser(editingUser.id, updateData);
+    showToast('User updated successfully', 'success');
+    setEditingUser(null);
+  } catch (error) {
+    showToast('Failed to update user', 'error');
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
+  const filteredUsers = users.filter(user => 
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  if (isLoading && users.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-12 w-12 bg-primary-200 rounded-full mb-4"></div>
-          <div className="h-4 w-32 bg-primary-100 rounded"></div>
-        </div>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <FiLoader className="animate-spin text-blue-600 text-4xl" />
+        <span className="ml-2 text-gray-700">Loading users...</span>
       </div>
     );
   }
 
-  if (error && (!users || users.length === 0)) {
+  if (error && users.length === 0) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 flex items-start">
-        <FiAlertCircle className="mt-1 mr-2 flex-shrink-0" />
-        <div>
-          <h3 className="font-medium">Error loading users</h3>
-          <p className="text-sm">{error}</p>
-        </div>
+      <div className="flex justify-center items-center min-h-[400px] text-red-500">
+        <FiAlertCircle className="text-3xl mr-2" />
+        <span>Error loading users: {error}</span>
       </div>
     );
   }
+
+  const canCreateUser = currentUser?.role === 'ADMIN';
 
   return (
     <div>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Users</h1>
-        <Link to="/admin/users/create" className="btn btn-primary flex items-center">
-          <FiPlus className="mr-2" />
-          New User
-        </Link>
+        {canCreateUser && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+          >
+            <FiPlus className="mr-1" />
+            Add User
+          </button>
+        )}
       </div>
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search users..."
-            className="input pl-10 pr-10" // Added pl-10 for search icon space
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={() => setSearchTerm('')}
-            >
-              <FiX size={18} />
-            </button>
-          )}
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <FiSearch size={18} />
-          </div>
-        </div>
+        <SearchBar 
+          onSearch={setSearchTerm} 
+          placeholder="Search users..." 
+        />
       </div>
 
       {filteredUsers.length > 0 ? (
@@ -142,82 +190,111 @@ const UserList = () => {
                   <UserItem 
                     key={user.id} 
                     user={user} 
-                    onDelete={handleDeleteClick} 
+                    onDelete={handleDeleteClick}
+                    onEdit={() => setEditingUser(user)}
+                    onViewDetails={() => setViewingUser(user)}
                   />
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200">
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-gray-50 border border-gray-200 text-gray-700 rounded-md p-6 text-center">
           <p className="text-lg">
             {searchTerm ? 'No users found matching your search.' : 'No users found.'}
           </p>
+          {canCreateUser && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Create your first user
+            </button>
+          )}
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-6">
-          <nav>
-            <ul className="flex space-x-2">
-              <li>
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 0}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === 0
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Previous
-                </button>
-              </li>
-              {[...Array(totalPages)].map((_, i) => (
-                <li key={i}>
-                  <button
-                    onClick={() => handlePageChange(i)}
-                    className={`px-3 py-1 rounded ${
-                      currentPage === i
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                </li>
-              ))}
-              <li>
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages - 1}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === totalPages - 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      )}
+      {/* Create User Modal */}
+<Modal
+  isOpen={showCreateModal}
+  onClose={() => setShowCreateModal(false)}
+  title="Create New User"
+>
+  <div className="p-6">
+    <UserForm 
+      onSubmit={(data) => handleCreateUser(data)}
+      isSubmitting={isCreating}
+    />
+  </div>
+</Modal>
+
+{/* Edit User Modal */}
+<Modal
+  isOpen={!!editingUser}
+  onClose={() => setEditingUser(null)}
+  title={editingUser ? `Edit User: ${editingUser.username}` : ''}
+>
+  <div className="p-6">
+    {editingUser && (
+      <UserForm
+        initialData={editingUser}
+        isEdit={true}
+        onSubmit={(data) => handleUpdateUser(data)}
+        isSubmitting={isUpdating}
+      />
+    )}
+  </div>
+</Modal>
+
+      {/* User Details Modal */}
+      <Modal
+        isOpen={!!viewingUser}
+        onClose={() => setViewingUser(null)}
+        title="User Details"
+      >
+        {viewingUser && <UserDetailsModal user={viewingUser} />}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      <ConfirmModal
+      <Modal
         isOpen={userToDelete !== null}
+        onClose={cancelDelete}
         title="Confirm Delete"
-        message="Are you sure you want to delete this user? This action cannot be undone."
-        confirmLabel={isDeleting ? "Deleting..." : "Delete"}
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
-        isSubmitting={isDeleting}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
+      >
+        <div className="p-6">
+          <p className="mb-6">
+            Are you sure you want to delete this user? This action cannot be undone.
+          </p>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={cancelDelete}
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+              disabled={isDeleting}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

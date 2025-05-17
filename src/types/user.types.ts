@@ -14,6 +14,19 @@ export interface User {
   updatedAt: string;
 }
 
+export interface UserCreateRequest {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  profilePic?: string | null;
+  role: UserRole;
+  isActive: boolean;
+  password: string;
+  confirmPassword?: string;
+}
+
 export interface UserUpdateRequest {
   firstName?: string;
   lastName?: string;

@@ -1,39 +1,48 @@
-import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import type { User, UserUpdateRequest } from '../../types/user.types';
+import type { User } from '../../types/user.types';
 
-// Set up validation schema with Zod
-const userFormSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email format'),
-  phone: z.string().optional(),
-  profilePic: z.string().optional().nullable(),
-  role: z.enum(['ADMIN', 'WRITER', 'READER']),
-  isActive: z.boolean(),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  password: z.string().optional(),
-  confirmPassword: z.string().optional(),
-}).refine(data => {
-  // If password is provided, confirmPassword should match
-  if (data.password && data.password !== data.confirmPassword) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+const getUserFormSchema = (isEdit: boolean) => {
+  return z.object({
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email('Invalid email format'),
+    phone: z.string().optional(),
+    profilePic: z.string().optional().nullable(),
+    role: z.enum(['ADMIN', 'WRITER', 'READER']),
+    isActive: z.boolean(),
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    password: z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
+    confirmPassword: z.string().optional().or(z.literal('')),
+  }).refine(data => {
+    if (data.password && data.password !== data.confirmPassword) {
+      return false;
+    }
+    return true;
+  }, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
+  .refine(data => {
+    if (!isEdit && !data.password) {
+      return false;
+    }
+    return true;
+  }, {
+    message: "Password is required",
+    path: ['password'],
+  });
+};
 
-type UserFormData = z.infer<typeof userFormSchema>;
+export type UserFormData = z.infer<ReturnType<typeof getUserFormSchema>>;
 
 interface UserFormProps {
   initialData?: User;
   isEdit?: boolean;
-  onSubmit: (data: UserUpdateRequest | UserFormData) => void;
+  onSubmit: (data: UserFormData) => void;
   isSubmitting: boolean;
   error?: string | null;
 }
@@ -48,8 +57,14 @@ const UserForm = ({
   const [showPassword, setShowPassword] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<UserFormData>({
-    resolver: zodResolver(userFormSchema),
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors }, 
+    setValue, 
+    watch 
+  } = useForm<UserFormData>({
+    resolver: zodResolver(getUserFormSchema(isEdit)),
     defaultValues: initialData ? {
       ...initialData,
       password: '',
@@ -68,7 +83,6 @@ const UserForm = ({
     }
   });
 
-  // Watch profilePic to update preview
   const profilePicValue = watch('profilePic');
 
   useEffect(() => {
@@ -84,13 +98,7 @@ const UserForm = ({
   };
 
   const processSubmit = (data: UserFormData) => {
-    // If no password is provided in edit mode, remove it from the data
-    if (isEdit && !data.password) {
-      const { password, confirmPassword, ...rest } = data;
-      onSubmit(rest);
-    } else {
-      onSubmit(data);
-    }
+    onSubmit(data);
   };
 
   return (
@@ -261,7 +269,7 @@ const UserForm = ({
         )}
       </div>
       
-      {/* Password fields - shown in create mode or optionally in edit mode */}
+      {/* Password fields */}
       <div className="border-t pt-6">
         <h3 className="text-lg font-medium text-gray-700 mb-4">
           {isEdit ? 'Change Password (Optional)' : 'Set Password'}
@@ -279,7 +287,7 @@ const UserForm = ({
                 type={showPassword ? 'text' : 'password'}
                 className={`input pr-10 ${errors.password ? 'border-red-500' : ''}`}
                 disabled={isSubmitting}
-                {...register('password', { required: !isEdit })}
+                {...register('password')}
               />
               <button
                 type="button"
@@ -297,7 +305,7 @@ const UserForm = ({
           {/* Confirm Password */}
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password*
+              Confirm Password{!isEdit && '*'}
             </label>
             <div className="relative">
               <input
@@ -305,7 +313,7 @@ const UserForm = ({
                 type={showPassword ? 'text' : 'password'}
                 className={`input pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
                 disabled={isSubmitting}
-                {...register('confirmPassword', { required: !isEdit })}
+                {...register('confirmPassword')}
               />
             </div>
             {errors.confirmPassword && (

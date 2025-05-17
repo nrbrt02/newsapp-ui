@@ -1,13 +1,17 @@
-import { Link } from 'react-router-dom';
 import { FiEdit, FiTrash2, FiInfo } from 'react-icons/fi';
 import type { User } from '../../types/user.types';
+import { useAuth } from '../../hooks/useAuth';
 
 interface UserItemProps {
   user: User;
   onDelete: (id: number) => void;
+  onEdit: () => void;
+  onViewDetails: () => void;
 }
 
-const UserItem = ({ user, onDelete }: UserItemProps) => {
+const UserItem = ({ user, onDelete, onEdit, onViewDetails }: UserItemProps) => {
+  const { user: currentUser } = useAuth();
+
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
@@ -45,6 +49,8 @@ const UserItem = ({ user, onDelete }: UserItemProps) => {
     }
   };
 
+  const canModify = currentUser?.role === 'ADMIN' || currentUser?.id === user.id;
+
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-6 py-4 whitespace-nowrap">
@@ -81,27 +87,31 @@ const UserItem = ({ user, onDelete }: UserItemProps) => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
         <div className="flex items-center justify-center space-x-3">
-          <Link 
-            to={`/admin/users/${user.id}`} 
+          <button
+            onClick={onViewDetails}
             className="text-gray-600 hover:text-primary-600"
             title="View Details"
           >
             <FiInfo size={18} />
-          </Link>
-          <Link 
-            to={`/admin/users/edit/${user.id}`}
-            className="text-gray-600 hover:text-primary-600"
-            title="Edit User"
-          >
-            <FiEdit size={18} />
-          </Link>
-          <button
-            onClick={() => onDelete(user.id)}
-            className="text-gray-600 hover:text-red-600"
-            title="Delete User"
-          >
-            <FiTrash2 size={18} />
           </button>
+          {canModify && (
+            <>
+              <button
+                onClick={onEdit}
+                className="text-gray-600 hover:text-primary-600"
+                title="Edit User"
+              >
+                <FiEdit size={18} />
+              </button>
+              <button
+                onClick={() => onDelete(user.id)}
+                className="text-gray-600 hover:text-red-600"
+                title="Delete User"
+              >
+                <FiTrash2 size={18} />
+              </button>
+            </>
+          )}
         </div>
       </td>
     </tr>
