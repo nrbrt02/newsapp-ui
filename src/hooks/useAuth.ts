@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { 
@@ -74,6 +74,27 @@ export const useAuth = () => {
     dispatch(clearError());
   };
 
+    const memoizedFetchProfile = useCallback(async () => {
+    if (isAuthenticated) {
+      try {
+        await dispatch(getUserProfile()).unwrap();
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+    return false;
+  }, [dispatch, isAuthenticated]);
+
+  const memoizedUpdateProfile = useCallback(async (userId: number, userData: Partial<User>) => {
+    try {
+      await dispatch(updateProfile({ userId, userData })).unwrap();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }, [dispatch]);
+
   return {
     user,
     token,
@@ -82,9 +103,9 @@ export const useAuth = () => {
     error,
     login: loginUser,
     register: registerUser,
-    fetchUserProfile,
-    updateUserProfile,
     logout: logoutUser,
     clearError: resetError,
+    fetchUserProfile: memoizedFetchProfile,
+    updateUserProfile: memoizedUpdateProfile,
   };
 };

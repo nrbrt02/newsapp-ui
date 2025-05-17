@@ -41,6 +41,21 @@ export const getArticles = async (
   }
 };
 
+export const getMyArticles = async (
+  page = 0, 
+  size = 10, 
+  sort = 'createdAt,desc'
+): Promise<PaginatedResponse<ArticlePreview>> => {
+  try {
+    const response = await api.get<PaginatedResponse<ArticlePreview>>(
+      `/articles/my-articles?page=${page}&size=${size}&sort=${sort}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Get published articles
 export const getPublishedArticles = async (
   page = 0, 

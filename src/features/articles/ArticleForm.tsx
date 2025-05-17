@@ -90,13 +90,14 @@ const ArticleForm = ({
   const handleImageUpload = (file: File) => {
     // In a real implementation, you would upload the file to your server here
     // For now, we'll just use the local file URL
-    const imageUrl = URL.createObjectURL(file);
-    setImagePreview(imageUrl);
+    // const imageUrl = URL.createObjectURL(file);
+    setImagePreview(URL.createObjectURL(file));
+
     
     setFormData({
-      ...formData,
-      featuredImage: imageUrl
-    });
+    ...formData,
+    featuredImage: "https://via.placeholder.com/800x400"
+  });
   };
 
   const handleImageUrlUpload = (url: string) => {

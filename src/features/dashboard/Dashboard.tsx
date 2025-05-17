@@ -12,9 +12,17 @@ const Dashboard = () => {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
 
-  useEffect(() => {
-    getArticles();
-  }, [getArticles]);
+useEffect(() => {
+  const loadArticles = async () => {
+    try {
+      await getArticles();
+    } catch (error) {
+      console.error("Error loading articles:", error);
+    }
+  };
+
+  loadArticles();
+}, [getArticles]);
 
   const handleDeleteClick = (articleId: number) => {
     setConfirmDelete(articleId);

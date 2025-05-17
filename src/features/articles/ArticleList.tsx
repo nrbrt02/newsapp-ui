@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FiPlus, FiEdit, FiEye, FiTrash2, FiAlertCircle, FiLoader } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { FiPlus, FiAlertCircle, FiLoader } from 'react-icons/fi';
 import { useArticle } from '../../hooks/useArticle';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
-import ArticleCard from '../../components/article/ArticleCard';
+import ArticleTable from './ArticleTable';
 import Modal from '../../components/ui/Modal';
 import ConfirmModal from '../../components/ui/ConfirmModal';
-import ArticleForm from './ArticleForm';
 import ArticleDetailsModal from './ArticleDetailsModal';
 import SearchBar from '../../components/ui/SearchBar';
 import Pagination from '../../components/ui/Pagination';
@@ -21,6 +21,7 @@ const ArticleList = () => {
     isLoading, 
     error, 
     getArticles,
+    getArticlesByCurrentUser,
     getArticleById,
     createArticle,
     updateArticle, 
@@ -44,44 +45,53 @@ const ArticleList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Load articles when component mounts
-  const loadArticles = useCallback((page = 0) => {
-    getArticles(page);
-  }, [getArticles]);
+  // Load articles function - stable reference
+  const loadArticles = useCallback(async (page = 0) => {
+    try {
+      if (user?.role === 'ADMIN') {
+        await getArticles(page);
+      } else {
+        await getArticlesByCurrentUser(page);
+      }
+    } catch (error) {
+      console.error("Error loading articles:", error);
+    }
+  }, [user?.role, getArticles, getArticlesByCurrentUser]);
 
+  // Load articles effect
   useEffect(() => {
-    loadArticles(currentPage);
+    const fetchData = async () => {
+      await loadArticles(currentPage);
+    };
     
-    // Cleanup function to prevent memory leaks and reset state
+    fetchData();
+  }, [currentPage]); // Only depend on currentPage
+
+  // Cleanup effect
+  useEffect(() => {
     return () => {
       clearArticle();
       clearError();
     };
-  }, [loadArticles, currentPage, clearArticle, clearError]);
+  }, [clearArticle, clearError]);
 
-  const handleSearch = (term: string) => {
+  // Search handler with debounce
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
     setCurrentPage(0);
-    // If search term is empty, load all articles
-    // Otherwise, implement search functionality
-    if (!term.trim()) {
-      loadArticles(0);
-    } else {
-      // Implement search logic or filter client-side for now
-      // This could be replaced with an API call to search articles
-    }
-  };
+  }, []);
 
-  const handlePageChange = (page: number) => {
+  // Other handlers remain the same...
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-  };
+  }, []);
 
-  const handleCreateClick = () => {
-    clearArticle(); // Clear any existing article data
+  const handleCreateClick = useCallback(() => {
+    clearArticle();
     setShowCreateModal(true);
-  };
+  }, [clearArticle]);
 
-  const handleEditClick = async (id: number) => {
+  const handleEditClick = useCallback(async (id: number) => {
     setSelectedArticleId(id);
     const success = await getArticleById(id);
     if (success) {
@@ -89,9 +99,9 @@ const ArticleList = () => {
     } else {
       showToast('Failed to load article details', 'error');
     }
-  };
+  }, [getArticleById, showToast]);
 
-  const handleViewClick = async (id: number) => {
+  const handleViewClick = useCallback(async (id: number) => {
     setSelectedArticleId(id);
     const success = await getArticleById(id);
     if (success) {
@@ -99,13 +109,13 @@ const ArticleList = () => {
     } else {
       showToast('Failed to load article details', 'error');
     }
-  };
+  }, [getArticleById, showToast]);
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = useCallback((id: number) => {
     setSelectedArticleId(id);
     setShowDeleteModal(true);
-  };
-
+  }, []);
+  
   const handleCreateSubmit = async (formData: ArticleCreateRequest) => {
     setIsSubmitting(true);
     
@@ -174,7 +184,7 @@ const ArticleList = () => {
   // Check if user can create/edit articles
   const canManageArticles = user?.role === 'ADMIN' || user?.role === 'WRITER';
   
-  // Filter articles based on search term (client-side filtering)
+  // Get filtered articles based on search term (client-side filtering)
   const filteredArticles = articles?.content
     ? articles.content.filter(
         (article) =>
@@ -207,15 +217,17 @@ const ArticleList = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Articles</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {user?.role === 'ADMIN' ? 'All Articles' : 'My Articles'}
+        </h1>
         {canManageArticles && (
-          <button
-            onClick={handleCreateClick}
+          <Link
+            to="/admin/articles/create"
             className="btn btn-primary flex items-center"
           >
             <FiPlus className="mr-2" />
             New Article
-          </button>
+          </Link>
         )}
       </div>
 
@@ -230,53 +242,23 @@ const ArticleList = () => {
 
       {articles && articles.content.length > 0 ? (
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredArticles.map((article) => (
-              <div key={article.id} className="relative group">
-                <ArticleCard article={article} />
-                
-                {/* Overlay with action buttons */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleViewClick(article.id)}
-                      className="p-2 bg-white rounded-full text-gray-700 hover:text-primary-600"
-                      title="View Details"
-                    >
-                      <FiEye size={18} />
-                    </button>
-                    
-                    {canManageArticles && (user?.role === 'ADMIN' || user?.id === article.author.id) && (
-                      <>
-                        <button
-                          onClick={() => handleEditClick(article.id)}
-                          className="p-2 bg-white rounded-full text-gray-700 hover:text-primary-600"
-                          title="Edit"
-                        >
-                          <FiEdit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(article.id)}
-                          className="p-2 bg-white rounded-full text-gray-700 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Article Table */}
+          <ArticleTable 
+            articles={filteredArticles}
+            onView={handleViewClick}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+          />
           
           {/* Pagination */}
           {articles.totalPages > 1 && (
-            <Pagination 
-              currentPage={currentPage}
-              totalPages={articles.totalPages}
-              onPageChange={handlePageChange}
-            />
+            <div className="mt-6">
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={articles.totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           )}
         </div>
       ) : (
@@ -284,50 +266,21 @@ const ArticleList = () => {
           <p className="text-lg">
             {searchTerm
               ? `No articles found matching "${searchTerm}"`
-              : 'No articles found.'
+              : user?.role === 'ADMIN' 
+                ? 'No articles found in the system.' 
+                : 'You haven\'t created any articles yet.'
             }
           </p>
           {canManageArticles && (
-            <button
-              onClick={handleCreateClick}
-              className="mt-4 btn btn-primary"
+            <Link
+              to="/admin/articles/create"
+              className="mt-4 btn btn-primary inline-block"
             >
               Create your first article
-            </button>
+            </Link>
           )}
         </div>
       )}
-
-      {/* Create Article Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Create New Article"
-        size="xl"
-      >
-        <ArticleForm
-          onSubmit={handleCreateSubmit}
-          isSubmitting={isSubmitting}
-          error={error}
-        />
-      </Modal>
-
-      {/* Edit Article Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Edit Article"
-        size="xl"
-      >
-        {article && (
-          <ArticleForm
-            initialData={article}
-            onSubmit={handleEditSubmit}
-            isSubmitting={isSubmitting}
-            error={error}
-          />
-        )}
-      </Modal>
 
       {/* View Article Details Modal */}
       <Modal

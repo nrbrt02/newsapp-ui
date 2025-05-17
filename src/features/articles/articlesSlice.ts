@@ -35,6 +35,18 @@ export const fetchArticles = createAsyncThunk(
   }
 );
 
+export const fetchArticlesByCurrentUser = createAsyncThunk(
+  'articles/fetchArticlesByCurrentUser',
+  async ({ page = 0, size = 10, sort = 'createdAt,desc' }: { page?: number, size?: number, sort?: string }, { rejectWithValue }) => {
+    try {
+      const response = await articleService.getMyArticles(page, size, sort);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch your articles');
+    }
+  }
+);
+
 export const fetchPublishedArticles = createAsyncThunk(
   'articles/fetchPublishedArticles',
   async ({ page = 0, size = 10, sort = 'createdAt,desc' }: { page?: number, size?: number, sort?: string }, { rejectWithValue }) => {
@@ -257,6 +269,21 @@ const articlesSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       });
+
+        builder
+    .addCase(fetchArticlesByCurrentUser.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    })
+    .addCase(fetchArticlesByCurrentUser.fulfilled, (state, action: PayloadAction<PaginatedResponse<ArticlePreview>>) => {
+      state.isLoading = false;
+      state.articles = action.payload;
+      state.error = null;
+    })
+    .addCase(fetchArticlesByCurrentUser.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    });
 
     // Handle fetchArticlesByAuthor
     builder

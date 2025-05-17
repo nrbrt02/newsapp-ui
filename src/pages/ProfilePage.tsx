@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { FiAlertCircle, FiEye, FiEyeOff, FiSave, FiCheck } from 'react-icons/fi';
+import { FiAlertCircle, FiEye, FiEyeOff, FiSave } from 'react-icons/fi';
+import { useToast } from '../context/ToastContext';
 
 const ProfilePage = () => {
-  const { user, isLoading, error, updateUserProfile } = useAuth();
+  const { user, isLoading, error, fetchUserProfile, updateUserProfile } = useAuth();
+  const { showToast } = useToast();
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -17,12 +19,29 @@ const ProfilePage = () => {
   });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [changePassword, setChangePassword] = useState(false);
 
-  // Populate form when user data is available
+  // Fetch user profile data when component mounts
+useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      const success = await fetchUserProfile();
+      if (!success) {
+        showToast('Failed to load profile data', 'error');
+      }
+    } catch (err) {
+      showToast('Error loading profile data', 'error');
+    }
+  };
+
+  if (user && !formData.firstName) {
+    loadProfile();
+  }
+}, [fetchUserProfile, showToast, user, formData.firstName])
+
+// Populate form when user data is available
   useEffect(() => {
     if (user) {
       setFormData({
@@ -49,11 +68,6 @@ const ProfilePage = () => {
         ...formErrors,
         [name]: ''
       });
-    }
-    
-    // Clear success message when form changes
-    if (successMessage) {
-      setSuccessMessage('');
     }
   };
 
@@ -137,14 +151,15 @@ const ProfilePage = () => {
         phone: formData.phone,
         profilePic: formData.profilePic,
         ...(changePassword && {
-          password: formData.newPassword
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
         })
       };
       
       const success = await updateUserProfile(user.id, updateData);
       
       if (success) {
-        setSuccessMessage('Profile updated successfully!');
+        showToast('Profile updated successfully!', 'success');
         // Reset password fields if they were filled
         if (changePassword) {
           setFormData({
@@ -155,9 +170,12 @@ const ProfilePage = () => {
           });
           setChangePassword(false);
         }
+      } else {
+        showToast('Failed to update profile', 'error');
       }
     } catch (err) {
       console.error('Error updating profile:', err);
+      showToast('Error updating profile', 'error');
     } finally {
       setIsUpdating(false);
     }
@@ -195,14 +213,6 @@ const ProfilePage = () => {
         <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded flex items-start">
           <FiAlertCircle className="mt-1 mr-2 flex-shrink-0" />
           <span>{error}</span>
-        </div>
-      )}
-      
-      {/* Display success message */}
-      {successMessage && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded flex items-start">
-          <FiCheck className="mt-1 mr-2 flex-shrink-0" />
-          <span>{successMessage}</span>
         </div>
       )}
       

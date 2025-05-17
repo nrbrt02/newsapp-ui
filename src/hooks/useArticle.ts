@@ -10,6 +10,7 @@ import {
   searchArticles,
   createArticle,
   updateArticle,
+  fetchArticlesByCurrentUser,
   updateArticleStatus,
   deleteArticle,
   fetchCategories,
@@ -61,9 +62,19 @@ export const useArticle = () => {
     }
   };
 
-  const getArticles = async (page = 0, size = 10, sort = 'createdAt,desc') => {
+const getArticles = useCallback(async (page = 0, size = 10, sort = 'createdAt,desc') => {
+  try {
+    await dispatch(fetchArticles({ page, size, sort })).unwrap();
+    return true;
+  } catch (error) {
+    console.error("Error fetching articles:", error);
+    return false;
+  }
+}, [dispatch]);
+
+  const getArticlesByCurrentUser = async (page = 0, size = 10, sort = 'createdAt,desc') => {
     try {
-      await dispatch(fetchArticles({ page, size, sort })).unwrap();
+      await dispatch(fetchArticlesByCurrentUser({ page, size, sort })).unwrap();
       return true;
     } catch (error) {
       return false;
@@ -171,6 +182,7 @@ export const useArticle = () => {
     getArticleById,
     getArticlesByAuthor,
     getArticlesByCategory,
+    getArticlesByCurrentUser,
     searchArticles: searchForArticles,
     createArticle: createNewArticle,
     updateArticle: updateExistingArticle,
