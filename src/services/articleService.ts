@@ -9,7 +9,23 @@ import type {
   Tag
 } from '../types/article.types';
 
-// Get paginated articles
+export const uploadImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    const response = await api.post<{ imageUrl: string }>('/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data.imageUrl;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const getArticles = async (
   page = 0, 
   size = 10, 
@@ -165,26 +181,6 @@ export const getCategories = async (): Promise<Category[]> => {
 export const getTags = async (): Promise<Tag[]> => {
   try {
     const response = await api.get<Tag[]>('/tags');
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Create category (admin only)
-export const createCategory = async (category: { name: string, description: string }): Promise<Category> => {
-  try {
-    const response = await api.post<Category>('/categories', category);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Create tag (admin or writer)
-export const createTag = async (tag: { name: string }): Promise<Tag> => {
-  try {
-    const response = await api.post<Tag>('/tags', tag);
     return response.data;
   } catch (error) {
     throw error;

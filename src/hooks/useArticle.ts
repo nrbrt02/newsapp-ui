@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { 
@@ -33,16 +33,33 @@ export const useArticle = () => {
     error 
   } = useSelector((state: RootState) => state.articles);
 
-  // Load categories and tags when hook is used
-  useEffect(() => {
-    if (categories.length === 0) {
-      dispatch(fetchCategories());
+  // Memoize the loadCategories and loadTags functions to prevent unnecessary re-renders
+  const loadCategories = useCallback(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
+  const loadTags = useCallback(() => {
+    dispatch(fetchTags());
+  }, [dispatch]);
+
+  // Load categories and tags when needed, not automatically on hook mount
+  const reloadCategories = async () => {
+    try {
+      await dispatch(fetchCategories()).unwrap();
+      return true;
+    } catch (error) {
+      return false;
     }
-    
-    if (tags.length === 0) {
-      dispatch(fetchTags());
+  };
+
+  const reloadTags = async () => {
+    try {
+      await dispatch(fetchTags()).unwrap();
+      return true;
+    } catch (error) {
+      return false;
     }
-  }, [dispatch, categories.length, tags.length]);
+  };
 
   const getArticles = async (page = 0, size = 10, sort = 'createdAt,desc') => {
     try {
@@ -142,24 +159,6 @@ export const useArticle = () => {
     dispatch(clearError());
   };
 
-  const reloadCategories = async () => {
-    try {
-      await dispatch(fetchCategories()).unwrap();
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const reloadTags = async () => {
-    try {
-      await dispatch(fetchTags()).unwrap();
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
   return {
     articles,
     article,
@@ -179,7 +178,9 @@ export const useArticle = () => {
     deleteArticle: removeArticle,
     clearArticle: clearCurrentArticle,
     clearError: clearCurrentError,
+    loadCategories,
+    loadTags,
     reloadCategories,
-    reloadTags,
+    reloadTags
   };
 };

@@ -7,7 +7,7 @@ import { FiEdit, FiEye, FiClock, FiCalendar, FiMessageSquare, FiAlertCircle } fr
 
 const ArticlePage = () => {
   const { id } = useParams<{ id: string }>();
-  const { article, isLoading, error, getArticleById } = useArticle();
+  const { article, isLoading, error, getArticleById, clearArticle } = useArticle();
   const { user, isAuthenticated } = useAuth();
   const [isUserAuthor, setIsUserAuthor] = useState(false);
 
@@ -15,14 +15,19 @@ const ArticlePage = () => {
     if (id) {
       getArticleById(parseInt(id));
     }
-  }, [id, getArticleById]);
+    
+    // Cleanup function
+    return () => {
+      clearArticle();
+    };
+  }, [id, getArticleById, clearArticle]);
 
   // Check if the current user is the author of the article
   useEffect(() => {
     if (article && user) {
       setIsUserAuthor(article.author.id === user.id || user.role === 'ADMIN');
     }
-  }, []);
+  }, [article, user]);
 
   if (isLoading) {
     return (
@@ -122,13 +127,15 @@ const ArticlePage = () => {
       </div>
 
       {/* Featured Image */}
-      <div className="mb-8">
-        <img
-          src={article.featuredImage || '/placeholder-image.jpg'}
-          alt={article.title}
-          className="w-full h-auto rounded-lg shadow-md"
-        />
-      </div>
+      {article.featuredImage && (
+        <div className="mb-8">
+          <img
+            src={article.featuredImage}
+            alt={article.title}
+            className="w-full h-auto rounded-lg shadow-md"
+          />
+        </div>
+      )}
 
       {/* Article Content */}
       <div className="prose prose-lg max-w-none mb-8">
@@ -176,7 +183,7 @@ const ArticlePage = () => {
         </div>
       )}
 
-      {/* Comments Section Placeholder - Will implement later */}
+      {/* Comments Section Placeholder */}
       <div className="mt-10 border-t border-gray-200 pt-6">
         <h2 className="text-2xl font-bold mb-6">Comments</h2>
         
