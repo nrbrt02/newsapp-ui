@@ -81,23 +81,53 @@ const getArticles = useCallback(async (page = 0, size = 10, sort = 'createdAt,de
     }
   };
 
-  const getPublishedArticles = async (page = 0, size = 10, sort = 'createdAt,desc') => {
-    try {
-      await dispatch(fetchPublishedArticles({ page, size, sort })).unwrap();
-      return true;
-    } catch (error) {
-      return false;
+const getPublishedArticles = useCallback(async (
+  page = 0, 
+  sort: 'newest' | 'oldest' | 'views' = 'newest',
+  categoryId: string | null = null
+) => {
+  try {
+    // Convert our sort option to API expected format
+    let sortParam = '';
+    let direction = 'desc';
+    
+    switch(sort) {
+      case 'newest':
+        sortParam = 'createdAt';
+        direction = 'desc';
+        break;
+      case 'oldest':
+        sortParam = 'createdAt';
+        direction = 'asc';
+        break;
+      case 'views':
+        sortParam = 'views';
+        direction = 'desc';
+        break;
     }
-  };
 
-  const getArticleById = async (id: number) => {
-    try {
+    await dispatch(fetchPublishedArticles({ 
+      page, 
+      sort: sortParam, 
+      direction,
+      categoryId 
+    })).unwrap();
+    return true;
+  } catch (error) {
+    return false;
+  }
+}, [dispatch]);
+
+const getArticleById = useCallback(async (id: number) => {
+  try {
+    if (!article || article.id !== id) {
       await dispatch(fetchArticleById(id)).unwrap();
-      return true;
-    } catch (error) {
-      return false;
     }
-  };
+    return true;
+  } catch (error) {
+    return false;
+  }
+}, [dispatch, article]);
 
   const getArticlesByAuthor = async (authorId: number, page = 0, size = 10, sort = 'createdAt,desc') => {
     try {
@@ -117,14 +147,14 @@ const getArticles = useCallback(async (page = 0, size = 10, sort = 'createdAt,de
     }
   };
 
-  const searchForArticles = async (keyword: string, page = 0, size = 10, sort = 'createdAt,desc') => {
-    try {
-      await dispatch(searchArticles({ keyword, page, size, sort })).unwrap();
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
+const searchForArticles = useCallback(async (keyword: string, page = 0, size = 10, sort = 'createdAt,desc') => {
+  try {
+    await dispatch(searchArticles({ keyword, page, size, sort })).unwrap();
+    return true;
+  } catch (error) {
+    return false;
+  }
+}, [dispatch]);
 
   const createNewArticle = async (articleData: ArticleCreateRequest) => {
     try {

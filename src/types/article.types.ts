@@ -32,6 +32,51 @@ export interface ArticleAuthor {
   lastName?: string;
 }
 
+export interface CommentUser {
+  id: number;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface Reply {
+  id: number;
+  content: string;
+  likes: number;
+  status: number;
+  commentId: number;
+  user: CommentUser;
+  email: string;
+  parentReplyId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Comment {
+  id: number;
+  comment: string;
+  likes: number;
+  status: number;
+  articleId: number;
+  user: CommentUser;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+  replies: Reply[];
+}
+
+export interface CommentRequest {
+  comment: string;
+  articleId: number;
+}
+
+export interface ReplyRequest {
+  content: string;
+  commentId: number;
+  parentReplyId: number | null;
+}
+
 export interface Article {
   id: number;
   title: string;
@@ -50,6 +95,7 @@ export interface Article {
   updatedAt: string;
   tags: Tag[];
   images?: ArticleImage[];
+  comments?: Comment[];
 }
 
 export interface ArticlePreview {
@@ -125,38 +171,4 @@ export interface ArticlesState {
   tags: Tag[];
   isLoading: boolean;
   error: string | null;
-}
-
-export interface Comment {
-  id: number;
-  comment: string;
-  likes: number;
-  status: number;
-  articleId: number;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-  };
-  email: string;
-  createdAt: string;
-  updatedAt: string;
-  replies: Reply[];
-}
-
-export interface Reply {
-  id: number;
-  content: string;
-  likes: number;
-  status: number;
-  commentId: number;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-  };
-  email: string;
-  parentReplyId: number | null;
-  createdAt: string;
-  updatedAt: string;
 }

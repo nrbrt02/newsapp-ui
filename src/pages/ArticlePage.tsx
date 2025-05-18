@@ -1,31 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useArticle } from '../hooks/useArticle';
 import { useAuth } from '../hooks/useAuth';
 import { formatDistanceToNow, format } from 'date-fns';
 import { FiEdit, FiEye, FiClock, FiCalendar, FiMessageSquare, FiAlertCircle } from 'react-icons/fi';
+import CommentsSection from '../components/article/CommentsSection';
 
 const ArticlePage = () => {
   const { id } = useParams<{ id: string }>();
   const { article, isLoading, error, getArticleById, clearArticle } = useArticle();
   const { user, isAuthenticated } = useAuth();
   const [isUserAuthor, setIsUserAuthor] = useState(false);
+  const [articleId, setArticleId] = useState<number | null>(null);
 
+  // Parse and set the article ID once when the component mounts or when the ID param changes
   useEffect(() => {
     if (id) {
-      getArticleById(parseInt(id));
+      const parsedId = parseInt(id);
+      if (!isNaN(parsedId)) {
+        setArticleId(parsedId);
+      }
+    }
+  }, [id]);
+
+  // Fetch article data when articleId changes
+  useEffect(() => {
+    if (articleId !== null) {
+      getArticleById(articleId);
     }
     
     // Cleanup function
     return () => {
       clearArticle();
     };
-  }, [id, getArticleById, clearArticle]);
+  }, [articleId, getArticleById, clearArticle]);
 
   // Check if the current user is the author of the article
   useEffect(() => {
     if (article && user) {
       setIsUserAuthor(article.author.id === user.id || user.role === 'ADMIN');
+    } else {
+      setIsUserAuthor(false);
     }
   }, [article, user]);
 
@@ -97,7 +112,7 @@ const ArticlePage = () => {
         </div>
         <div className="flex items-center">
           <FiMessageSquare className="mr-1" />
-          <span>0 comments</span>
+          <span>{article.comments?.length || 0} comments</span>
         </div>
       </div>
 
@@ -183,32 +198,8 @@ const ArticlePage = () => {
         </div>
       )}
 
-      {/* Comments Section Placeholder */}
-      <div className="mt-10 border-t border-gray-200 pt-6">
-        <h2 className="text-2xl font-bold mb-6">Comments</h2>
-        
-        {isAuthenticated ? (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <textarea
-              placeholder="Leave a comment..."
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              rows={3}
-            ></textarea>
-            <div className="mt-2 flex justify-end">
-              <button className="btn btn-primary">Post Comment</button>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-gray-50 p-4 rounded-lg mb-6 text-center">
-            <p className="mb-3">You need to be logged in to comment.</p>
-            <Link to="/login" className="btn btn-primary">Log In</Link>
-          </div>
-        )}
-        
-        <div className="bg-gray-50 p-6 rounded-lg text-center">
-          <p className="text-gray-500">No comments yet. Be the first to comment!</p>
-        </div>
-      </div>
+      {/* Comments Section - Only render when we have a valid articleId */}
+      {articleId !== null && <CommentsSection articleId={articleId} />}
     </div>
   );
 };
