@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { FiEye, FiCalendar, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiEye, FiCalendar, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import type { ArticlePreview } from '../../types/article.types';
 
 interface ArticleItemProps {
@@ -72,13 +72,19 @@ const ArticleItem = ({
         </p>
         
         <div className="flex justify-between items-center text-sm text-gray-500">
-          <div className="flex items-center">
-            <FiCalendar className="mr-1" />
-            <span>{format(new Date(article.createdAt), 'MMM d, yyyy')}</span>
-          </div>
-          <div className="flex items-center">
-            <FiEye className="mr-1" />
-            <span>{article.views} views</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <FiCalendar className="mr-1" />
+              <span>{format(new Date(article.createdAt), 'MMM d, yyyy')}</span>
+            </div>
+            <div className="flex items-center">
+              <FiEye className="mr-1" />
+              <span>{article.views} views</span>
+            </div>
+            <div className="flex items-center">
+              <FiMessageSquare className="mr-1" />
+              <span>{article.commentCount} comments</span>
+            </div>
           </div>
         </div>
         

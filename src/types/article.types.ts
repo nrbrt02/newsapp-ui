@@ -45,7 +45,7 @@ export interface Reply {
   content: string;
   likes: number;
   status: number;
-  commentId: number;
+  commentId: number | null;
   user: CommentUser;
   email: string;
   parentReplyId: number | null;
@@ -69,6 +69,7 @@ export interface Comment {
 export interface CommentRequest {
   comment: string;
   articleId: number;
+  commentId?: number | null;
 }
 
 export interface ReplyRequest {
@@ -96,6 +97,7 @@ export interface Article {
   tags: Tag[];
   images?: ArticleImage[];
   comments?: Comment[];
+  commentCount: number;
 }
 
 export interface ArticlePreview {
@@ -113,6 +115,7 @@ export interface ArticlePreview {
   createdAt: string;
   updatedAt: string;
   tags: Tag[];
+  commentCount: number;
 }
 
 export interface ArticleCreateRequest {

@@ -19,6 +19,7 @@ const ArticleCard = ({ article, className = '' }: ArticleCardProps) => {
     tags,
     createdAt,
     views,
+    commentCount
   } = article;
 
   // Format the date as relative time (e.g., "3 days ago")
@@ -67,7 +68,7 @@ const ArticleCard = ({ article, className = '' }: ArticleCardProps) => {
               <FiEye className="inline mr-1" /> {views}
             </span>
             <span>
-              <FiMessageSquare className="inline mr-1" /> 0
+              <FiMessageSquare className="inline mr-1" /> {commentCount}
             </span>
           </div>
           <span>{formattedDate}</span>

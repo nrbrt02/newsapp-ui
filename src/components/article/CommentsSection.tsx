@@ -128,7 +128,8 @@ const CommentsSection = ({ articleId }: CommentsSectionProps) => {
       setIsSubmitting(true);
       const newComment = await commentService.createComment({
         comment: content,
-        articleId
+        articleId,
+        commentId: null  // Explicitly setting commentId to null for new comments
       });
       
       setComments(prev => [newComment, ...prev]);
@@ -152,8 +153,8 @@ const CommentsSection = ({ articleId }: CommentsSectionProps) => {
     try {
       const newReply = await commentService.createReply({
         content,
-        commentId,
-        parentReplyId: null
+        commentId,  // Keep the original commentId since it's required by the server
+        parentReplyId: null  // Only parentReplyId should be null for top-level replies
       });
       
       setComments(prev => 

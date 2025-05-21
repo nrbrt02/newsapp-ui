@@ -128,7 +128,7 @@ const ArticlePage = () => {
         </div>
         <div className="flex items-center">
           <FiMessageSquare className="mr-1" />
-          <span>{article.comments?.length || 0} comments</span>
+          <span>{article.commentCount} comments</span>
         </div>
       </div>
 
