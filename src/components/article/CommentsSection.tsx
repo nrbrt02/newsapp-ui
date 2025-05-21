@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
 import { Link } from 'react-router-dom';
@@ -22,58 +22,73 @@ const CommentsSection = ({ articleId }: CommentsSectionProps) => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const loadedRef = useRef(false);
   
-  // Effect for initial and subsequent loads of comments when articleId changes
+  // Load comments only once per articleId
   useEffect(() => {
-    // Reset state when article changes
-    setComments([]);
-    setPage(0);
-    setHasMore(false);
-    setError(null);
-    
-    // Skip if no articleId
-    if (!articleId) return;
-    
-    // Create an abort controller for this effect instance
+    let isMounted = true;
     const controller = new AbortController();
-    
-    // Define the loadComments function inside the effect
+
     const loadComments = async () => {
+      // Skip if invalid articleId
+      if (!articleId || articleId <= 0) {
+        if (isMounted) {
+          setComments([]);
+          setError(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
         setIsLoading(true);
+        setError(null);
         
         const response = await commentService.getCommentsByArticle(
           articleId, 
-          0, // Always load first page when article changes
+          0, 
           10,
           { signal: controller.signal }
         );
         
-        setComments(response.content);
-        setPage(0);
-        setHasMore(!response.last);
+        // Only update state if the component is still mounted
+        if (isMounted && !controller.signal.aborted) {
+          setComments(response.content || []);
+          setPage(0);
+          setHasMore(!response.last);
+          setError(null);
+        }
       } catch (err) {
-        if (err instanceof Error && err.name !== 'CanceledError' && err.name !== 'AbortError') {
+        // Only set error if it's not a canceled request and component is mounted
+        if (isMounted && 
+            err instanceof Error && 
+            err.name !== 'CanceledError' && 
+            err.name !== 'AbortError') {
           setError('Failed to load comments');
           console.error('Error loading comments:', err);
         }
       } finally {
-        setIsLoading(false);
+        // Only update loading state if component is mounted
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
-    
-    // Call the function
+
     loadComments();
-    
-    // Cleanup function to abort request when component unmounts or articleId changes
+
+    // Cleanup function
     return () => {
+      isMounted = false;
       controller.abort();
     };
-  }, [articleId]); // Only depend on articleId
+  }, [articleId]);
 
   // Separate function for loading more comments (pagination)
   const handleLoadMore = async () => {
     if (!articleId || isLoading) return;
+    
+    const controller = new AbortController();
     
     try {
       setIsLoading(true);
@@ -82,18 +97,25 @@ const CommentsSection = ({ articleId }: CommentsSectionProps) => {
       const response = await commentService.getCommentsByArticle(
         articleId, 
         nextPage, 
-        10
+        10,
+        { signal: controller.signal }
       );
       
-      setComments(prev => [...prev, ...response.content]);
+      setComments(prev => [...prev, ...(response.content || [])]);
       setPage(nextPage);
       setHasMore(!response.last);
     } catch (err) {
-      showToast('Failed to load more comments', 'error');
-      console.error('Error loading more comments:', err);
+      if (err instanceof Error && 
+          err.name !== 'CanceledError' && 
+          err.name !== 'AbortError') {
+        showToast('Failed to load more comments', 'error');
+        console.error('Error loading more comments:', err);
+      }
     } finally {
       setIsLoading(false);
     }
+
+    return () => controller.abort();
   };
 
   const handleAddComment = async (content: string) => {
@@ -254,6 +276,13 @@ const CommentsSection = ({ articleId }: CommentsSectionProps) => {
       return false;
     }
   };
+
+  // Reset the component when article changes
+  useEffect(() => {
+    return () => {
+      loadedRef.current = false;
+    };
+  }, [articleId]);
 
   return (
     <div className="mt-10 border-t border-gray-200 pt-6">

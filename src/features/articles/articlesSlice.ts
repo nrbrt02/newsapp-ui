@@ -257,33 +257,36 @@ const articlesSlice = createSlice({
     // Handle fetchArticleById
     builder
       .addCase(fetchArticleById.pending, (state) => {
+        console.log('fetchArticleById.pending');
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchArticleById.fulfilled, (state, action: PayloadAction<Article>) => {
+        console.log('fetchArticleById.fulfilled:', action.payload);
         state.isLoading = false;
         state.article = action.payload;
         state.error = null;
       })
       .addCase(fetchArticleById.rejected, (state, action) => {
+        console.log('fetchArticleById.rejected:', action.payload);
         state.isLoading = false;
         state.error = action.payload as string;
       });
 
-        builder
-    .addCase(fetchArticlesByCurrentUser.pending, (state) => {
-      state.isLoading = true;
-      state.error = null;
-    })
-    .addCase(fetchArticlesByCurrentUser.fulfilled, (state, action: PayloadAction<PaginatedResponse<ArticlePreview>>) => {
-      state.isLoading = false;
-      state.articles = action.payload;
-      state.error = null;
-    })
-    .addCase(fetchArticlesByCurrentUser.rejected, (state, action) => {
-      state.isLoading = false;
-      state.error = action.payload as string;
-    });
+    builder
+      .addCase(fetchArticlesByCurrentUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchArticlesByCurrentUser.fulfilled, (state, action: PayloadAction<PaginatedResponse<ArticlePreview>>) => {
+        state.isLoading = false;
+        state.articles = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchArticlesByCurrentUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
 
     // Handle fetchArticlesByAuthor
     builder

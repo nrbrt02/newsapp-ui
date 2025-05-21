@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useArticle } from '../hooks/useArticle';
 import { useAuth } from '../hooks/useAuth';
@@ -9,41 +9,44 @@ import CommentsSection from '../components/article/CommentsSection';
 const ArticlePage = () => {
   const { id } = useParams<{ id: string }>();
   const { article, isLoading, error, getArticleById, clearArticle } = useArticle();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [isUserAuthor, setIsUserAuthor] = useState(false);
-  const [articleId, setArticleId] = useState<number | null>(null);
+  const mountedRef = useRef(true);
 
-  // Parse and set the article ID once when the component mounts or when the ID param changes
+  // Cleanup on unmount
   useEffect(() => {
-    if (id) {
-      const parsedId = parseInt(id);
-      if (!isNaN(parsedId)) {
-        setArticleId(parsedId);
-      }
-    }
-  }, [id]);
-
-  // Fetch article data when articleId changes
-  useEffect(() => {
-    if (articleId !== null) {
-      getArticleById(articleId);
-    }
-    
-    // Cleanup function
     return () => {
+      // Clear article only on actual unmount
       clearArticle();
+      mountedRef.current = false;
     };
-  }, [articleId, getArticleById, clearArticle]);
+  }, []); // Keep dependencies empty
 
-  // Check if the current user is the author of the article
+  // Fetch article when ID changes
   useEffect(() => {
-    if (article && user) {
-      setIsUserAuthor(article.author.id === user.id || user.role === 'ADMIN');
+    const fetchArticle = async () => {
+      if (id && mountedRef.current) {
+        const parsedId = parseInt(id);
+        if (!isNaN(parsedId) && parsedId > 0) {
+          console.log('Fetching article with ID:', parsedId);
+          await getArticleById(parsedId);
+        }
+      }
+    };
+
+    fetchArticle();
+  }, [id, getArticleById]);
+
+  // Update author status when article or user changes
+  useEffect(() => {
+    if (article && user && mountedRef.current) {
+      setIsUserAuthor(article.author?.id === user.id || user.role === 'ADMIN');
     } else {
       setIsUserAuthor(false);
     }
   }, [article, user]);
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -55,6 +58,7 @@ const ArticlePage = () => {
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 flex items-start">
@@ -67,7 +71,8 @@ const ArticlePage = () => {
     );
   }
 
-  if (!article) {
+  // Show not found state
+  if (!isLoading && !article) {
     return (
       <div className="bg-gray-50 border border-gray-200 text-gray-700 rounded-md p-6 text-center">
         <p className="text-lg">Article not found.</p>
@@ -75,17 +80,24 @@ const ArticlePage = () => {
     );
   }
 
+  // Only render content when we have an article
+  if (!article) {
+    return null;
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Category */}
-      <div className="mb-4">
-        <Link
-          to={`/category/${article.category.id}`}
-          className="bg-primary-500 text-white text-xs font-semibold px-2 py-1 rounded-md"
-        >
-          {article.category.name}
-        </Link>
-      </div>
+      {article.category && (
+        <div className="mb-4">
+          <Link
+            to={`/category/${article.category.id}`}
+            className="bg-primary-500 text-white text-xs font-semibold px-2 py-1 rounded-md"
+          >
+            {article.category.name}
+          </Link>
+        </div>
+      )}
 
       {/* Title */}
       <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
@@ -94,21 +106,25 @@ const ArticlePage = () => {
 
       {/* Meta Information */}
       <div className="flex flex-wrap items-center text-sm text-gray-500 mb-6 gap-4">
-        <div className="flex items-center">
-          <FiCalendar className="mr-1" />
-          <span>
-            {format(new Date(article.createdAt), 'MMM d, yyyy')}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <FiClock className="mr-1" />
-          <span>
-            {formatDistanceToNow(new Date(article.createdAt), { addSuffix: true })}
-          </span>
-        </div>
+        {article.createdAt && (
+          <>
+            <div className="flex items-center">
+              <FiCalendar className="mr-1" />
+              <span>
+                {format(new Date(article.createdAt), 'MMM d, yyyy')}
+              </span>
+            </div>
+            <div className="flex items-center">
+              <FiClock className="mr-1" />
+              <span>
+                {formatDistanceToNow(new Date(article.createdAt), { addSuffix: true })}
+              </span>
+            </div>
+          </>
+        )}
         <div className="flex items-center">
           <FiEye className="mr-1" />
-          <span>{article.views} views</span>
+          <span>{article.views || 0} views</span>
         </div>
         <div className="flex items-center">
           <FiMessageSquare className="mr-1" />
@@ -117,29 +133,32 @@ const ArticlePage = () => {
       </div>
 
       {/* Author Information */}
-      <div className="flex items-center mb-6">
-        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-          {article.author.firstName?.charAt(0) || article.author.username.charAt(0)}
+      {article.author && (
+        <div className="flex items-center mb-6">
+          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+            {article.author.firstName?.charAt(0) || article.author.username?.charAt(0) || 'U'}
+          </div>
+          <div className="ml-3">
+            <span className="text-sm font-medium text-gray-700 block">
+              {article.author.firstName || article.author.lastName ? 
+                `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim() :
+                article.author.username || 'Unknown Author'}
+            </span>
+            <span className="text-xs text-gray-500">Author</span>
+          </div>
+          
+          {/* Edit Button for Author or Admin */}
+          {isUserAuthor && (
+            <Link
+              to={`/admin/articles/edit/${article.id}`}
+              className="ml-auto flex items-center text-sm text-primary-600 hover:text-primary-700"
+            >
+              <FiEdit className="mr-1" />
+              Edit Article
+            </Link>
+          )}
         </div>
-        <div className="ml-3">
-          <span className="text-sm font-medium text-gray-700 block">
-            {`${article.author.firstName || ''} ${article.author.lastName || ''}`}
-            {!article.author.firstName && !article.author.lastName && article.author.username}
-          </span>
-          <span className="text-xs text-gray-500">Author</span>
-        </div>
-        
-        {/* Edit Button for Author or Admin */}
-        {isUserAuthor && (
-          <Link
-            to={`/admin/articles/edit/${article.id}`}
-            className="ml-auto flex items-center text-sm text-primary-600 hover:text-primary-700"
-          >
-            <FiEdit className="mr-1" />
-            Edit Article
-          </Link>
-        )}
-      </div>
+      )}
 
       {/* Featured Image */}
       {article.featuredImage && (
@@ -148,13 +167,17 @@ const ArticlePage = () => {
             src={article.featuredImage}
             alt={article.title}
             className="w-full h-auto rounded-lg shadow-md"
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              img.src = 'https://placehold.co/800x400?text=Image+Not+Available';
+            }}
           />
         </div>
       )}
 
       {/* Article Content */}
       <div className="prose prose-lg max-w-none mb-8">
-        <div dangerouslySetInnerHTML={{ __html: article.content }} />
+        <div dangerouslySetInnerHTML={{ __html: article.content || '' }} />
       </div>
 
       {/* Tags */}
@@ -186,6 +209,10 @@ const ArticlePage = () => {
                   src={image.image}
                   alt={image.description || article.title}
                   className="w-full h-48 object-cover rounded-md shadow-sm"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.src = 'https://placehold.co/400x300?text=Image+Not+Available';
+                  }}
                 />
                 {image.description && (
                   <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-1 text-xs">
@@ -198,8 +225,8 @@ const ArticlePage = () => {
         </div>
       )}
 
-      {/* Comments Section - Only render when we have a valid articleId */}
-      {articleId !== null && <CommentsSection articleId={articleId} />}
+      {/* Comments Section */}
+      {article.id && <CommentsSection key={article.id} articleId={article.id} />}
     </div>
   );
 };

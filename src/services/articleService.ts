@@ -75,9 +75,12 @@ export const getPublishedArticles = async (
 // Get article by ID
 export const getArticleById = async (id: number): Promise<Article> => {
   try {
+    console.log('Making API call to fetch article:', id);
     const response = await api.get<Article>(`/articles/${id}`);
+    console.log('API response for article:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Error fetching article:', error);
     throw error;
   }
 };

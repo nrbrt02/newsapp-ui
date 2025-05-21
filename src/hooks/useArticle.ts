@@ -120,14 +120,13 @@ const getPublishedArticles = useCallback(async (
 
 const getArticleById = useCallback(async (id: number) => {
   try {
-    if (!article || article.id !== id) {
-      await dispatch(fetchArticleById(id)).unwrap();
-    }
+    await dispatch(fetchArticleById(id)).unwrap();
     return true;
   } catch (error) {
+    console.error("Error fetching article:", error);
     return false;
   }
-}, [dispatch, article]);
+}, [dispatch]);
 
   const getArticlesByAuthor = async (authorId: number, page = 0, size = 10, sort = 'createdAt,desc') => {
     try {

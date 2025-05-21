@@ -8,26 +8,38 @@ const REPLIES_ENDPOINT = '/replies';
 
 export const commentService = {
   // Get comments for an article
-  getCommentsByArticle: async (
-    articleId: number,
-    page = 0,
-    size = 10,
-    options?: { signal?: AbortSignal }
-  ): Promise<PaginatedResponse<Comment>> => {
-    try {
-      const response = await api.get<PaginatedResponse<Comment>>(
-        `${COMMENTS_ENDPOINT}/article/${articleId}`,
-        {
-          params: { page, size },
-          signal: options?.signal
-        }
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
+getCommentsByArticle: async (
+  articleId: number,
+  page = 0,
+  size = 10,
+  options?: { signal?: AbortSignal }
+): Promise<PaginatedResponse<Comment>> => {
+  try {
+    const response = await api.get<PaginatedResponse<Comment>>(
+      `${COMMENTS_ENDPOINT}/article/${articleId}`,
+      {
+        params: { page, size },
+        signal: options?.signal
+      }
+    );
+    return response.data;
+  } catch (error) {
+    // Don't rethrow canceled requests
+    if (axios.isCancel(error)) {
+      console.log('Request canceled:', error.message);
+      return { 
+        content: [], 
+        totalPages: 0,
+        totalElements: 0, 
+        last: true,
+        number: page,
+        // Add other required fields with default values
+      };
     }
-  },
-
+    console.error(`Error fetching comments for article ${articleId}:`, error);
+    throw error;
+  }
+},
   // Create a new comment
   createComment: async (comment: CommentRequest): Promise<Comment> => {
     try {
