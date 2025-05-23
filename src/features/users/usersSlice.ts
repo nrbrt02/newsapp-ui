@@ -21,9 +21,9 @@ const initialState: UsersState = {
 // Async thunks
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
-  async ({ page = 0, size = 10 }: { page?: number, size?: number }, { rejectWithValue }) => {
+  async ({ page = 0, size = 10, search = '' }: { page?: number, size?: number, search?: string }, { rejectWithValue }) => {
     try {
-      const response = await userService.getAllUsers(page, size);
+      const response = await userService.getAllUsers(page, size, search);
       return response;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch users');

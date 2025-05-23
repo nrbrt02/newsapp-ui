@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import type { RootState } from '../../store';
 import type { 
   ArticlesState,
   ArticlePreview,
@@ -61,8 +62,18 @@ export const fetchPublishedArticles = createAsyncThunk(
 
 export const fetchArticleById = createAsyncThunk(
   'articles/fetchArticleById',
-  async (id: number, { rejectWithValue }) => {
+  async (id: number, { getState, rejectWithValue }) => {
     try {
+      // Check if we already have the article in the store
+      const state = getState() as RootState;
+      const existingArticle = state.articles.article;
+      
+      // If we have the article and it matches the requested ID, return it
+      if (existingArticle && existingArticle.id === id) {
+        return existingArticle;
+      }
+      
+      // Otherwise, fetch from the API
       const response = await articleService.getArticleById(id);
       return response;
     } catch (error: any) {

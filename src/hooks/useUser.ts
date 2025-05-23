@@ -31,9 +31,9 @@ export const useUser = () => {
     currentPage 
   } = useSelector((state: RootState) => state.users);
   
-  const getUsers = async (page = 0, size = 10) => {
+  const getUsers = async (page = 0, size = 10, search = '') => {
     try {
-      await dispatch(fetchUsers({ page, size })).unwrap();
+      await dispatch(fetchUsers({ page, size, search })).unwrap();
       return true;
     } catch (error) {
       return false;

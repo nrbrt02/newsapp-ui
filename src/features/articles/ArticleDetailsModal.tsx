@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { FiCalendar, FiClock, FiEye, FiTag, FiList } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiEye, FiTag, FiList, FiUser, FiMessageSquare } from 'react-icons/fi';
 import type { Article } from '../../types/article.types';
 
 interface ArticleDetailsModalProps {
@@ -35,111 +35,113 @@ const ArticleDetailsModal = ({ article }: ArticleDetailsModalProps) => {
 
   return (
     <div className="p-6 max-h-[80vh] overflow-auto">
-      <div className="space-y-6">
-        {/* Featured Image */}
-        {article.featuredImage && (
-          <div className="mb-4">
+      {/* Featured Image */}
+      {article.featuredImage && (
+        <div className="mb-6">
+          <img
+            src={article.featuredImage}
+            alt={article.title}
+            className="w-full h-64 object-cover rounded-lg"
+          />
+        </div>
+      )}
+      
+      {/* Title and Status */}
+      <div className="flex justify-between items-start mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">{article.title}</h1>
+        {getStatusBadge(article.status)}
+      </div>
+      
+      {/* Meta Information */}
+      <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-6">
+        <div className="flex items-center">
+          <FiCalendar className="mr-1" />
+          <span>
+            {format(new Date(article.createdAt), 'MMM d, yyyy')}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <FiClock className="mr-1" />
+          <span>
+            Last updated: {format(new Date(article.updatedAt), 'MMM d, yyyy')}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <FiEye className="mr-1" />
+          <span>{article.views} views</span>
+        </div>
+        <div className="flex items-center">
+          <FiMessageSquare className="mr-1" />
+          <span>{article.commentCount} comments</span>
+        </div>
+      </div>
+      
+      {/* Description */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">Description</h2>
+        <p className="text-gray-600">{article.description}</p>
+      </div>
+      
+      {/* Content Preview */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">Content</h2>
+        <div className="bg-gray-50 p-4 rounded-md">
+          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: article.content }} />
+        </div>
+      </div>
+      
+      {/* Category */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">Category</h2>
+        <div className="flex items-center">
+          <FiList className="text-gray-500 mr-2" />
+          <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-md">
+            {article.category?.name || 'Uncategorized'}
+          </span>
+        </div>
+      </div>
+      
+      {/* Tags */}
+      {article.tags && article.tags.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">Tags</h2>
+          <div className="flex flex-wrap gap-2">
+            {article.tags.map((tag) => (
+              <div key={tag.id} className="flex items-center">
+                <FiTag className="text-gray-500 mr-1" />
+                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md">
+                  {tag.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Author */}
+      <div className="border-t pt-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">Author</h2>
+        <div className="flex items-center">
+          {article.author.profilePic ? (
             <img
-              src={article.featuredImage}
-              alt={article.title}
-              className="w-full h-64 object-cover rounded-lg"
+              src={article.author.profilePic}
+              alt={article.author.username}
+              className="h-10 w-10 rounded-full object-cover mr-3"
             />
-          </div>
-        )}
-        
-        {/* Title and Status */}
-        <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold text-gray-800">{article.title}</h1>
-          {getStatusBadge(article.status)}
-        </div>
-        
-        {/* Meta Information */}
-        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-          <div className="flex items-center">
-            <FiCalendar className="mr-1" />
-            <span>
-              {format(new Date(article.createdAt), 'MMM d, yyyy')}
-            </span>
-          </div>
-          <div className="flex items-center">
-            <FiClock className="mr-1" />
-            <span>
-              Last updated: {format(new Date(article.updatedAt), 'MMM d, yyyy')}
-            </span>
-          </div>
-          <div className="flex items-center">
-            <FiEye className="mr-1" />
-            <span>{article.views} views</span>
-          </div>
-        </div>
-        
-        {/* Description */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Description</h2>
-          <p className="text-gray-600">{article.description}</p>
-        </div>
-        
-        {/* Content Preview */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Content Preview</h2>
-          <div className="bg-gray-50 p-4 rounded-md h-56 overflow-auto">
-            <div dangerouslySetInnerHTML={{ __html: article.content.substring(0, 500) + '...' }} />
-          </div>
-          <div className="mt-2 text-right">
-            <Link 
-              to={`/articles/${article.id}`} 
-              className="text-primary-600 hover:text-primary-700"
-              target="_blank"
-            >
-              View Full Article
-            </Link>
-          </div>
-        </div>
-        
-        {/* Category */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Category</h2>
-          <div className="flex items-center">
-            <FiList className="text-gray-500 mr-2" />
-            <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-md">
-              {article.category?.name || 'Uncategorized'}
-            </span>
-          </div>
-        </div>
-        
-        {/* Tags */}
-        {article.tags && article.tags.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">Tags</h2>
-            <div className="flex flex-wrap gap-2">
-              {article.tags.map((tag) => (
-                <div key={tag.id} className="flex items-center">
-                  <FiTag className="text-gray-500 mr-1" />
-                  <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md">
-                    {tag.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Author */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Author</h2>
-          <div className="flex items-center">
+          ) : (
             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 mr-3">
-              {article.author?.firstName?.charAt(0) || article.author?.username?.charAt(0) || 'U'}
+              {article.author.firstName?.charAt(0) || article.author.username.charAt(0)}
             </div>
-            <div>
-              <p className="font-medium">
-                {article.author?.firstName && article.author?.lastName
-                  ? `${article.author.firstName} ${article.author.lastName}`
-                  : article.author?.username || 'Unknown'
-                }
-              </p>
-              <p className="text-sm text-gray-500">{article.author?.email}</p>
-            </div>
+          )}
+          <div>
+            <p className="font-medium">
+              {article.author.firstName && article.author.lastName
+                ? `${article.author.firstName} ${article.author.lastName}`
+                : article.author.username
+              }
+            </p>
+            <p className="text-sm text-gray-500">{article.author.email}</p>
+            <p className="text-sm text-gray-500">Role: {article.author.role}</p>
           </div>
         </div>
       </div>

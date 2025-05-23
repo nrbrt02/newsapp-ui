@@ -30,6 +30,8 @@ export interface ArticleAuthor {
   email: string;
   firstName?: string;
   lastName?: string;
+  profilePic?: string;
+  role?: string;
 }
 
 export interface CommentUser {

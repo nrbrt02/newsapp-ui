@@ -12,13 +12,14 @@ import type { User, UserCreateRequest, UserUpdateRequest } from '../../types/use
 import type { UserFormData } from './UserForm';
 import { useToast } from '../../context/ToastContext';
 
+const ITEMS_PER_PAGE = 10;
 
 const UserList = () => {
   const { 
     users = [],
     isLoading, 
     error, 
-    totalPages = 0,
+    totalPages: serverTotalPages = 0,
     currentPage = 0,
     getUsers, 
     deleteUser,
@@ -112,11 +113,19 @@ const handleUpdateUser = async (data: UserFormData) => {
   }
 };
 
+  // Client-side search filtering
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // Calculate client-side pagination
+  const clientTotalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
   );
 
   if (isLoading && users.length === 0) {
@@ -162,31 +171,31 @@ const handleUpdateUser = async (data: UserFormData) => {
         />
       </div>
 
-      {filteredUsers.length > 0 ? (
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map(user => (
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map(user => (
                   <UserItem 
                     key={user.id} 
                     user={user} 
@@ -194,37 +203,27 @@ const handleUpdateUser = async (data: UserFormData) => {
                     onEdit={() => setEditingUser(user)}
                     onViewDetails={() => setViewingUser(user)}
                   />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                    {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200">
-              <Pagination 
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          )}
+        {/* Always show pagination */}
+        <div className="px-6 py-4 border-t border-gray-200">
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={clientTotalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
-      ) : (
-        <div className="bg-gray-50 border border-gray-200 text-gray-700 rounded-md p-6 text-center">
-          <p className="text-lg">
-            {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-          </p>
-          {canCreateUser && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Create your first user
-            </button>
-          )}
-        </div>
-      )}
+      </div>
 
       {/* Create User Modal */}
 <Modal

@@ -2,9 +2,9 @@ import api from './api';
 import type { User, UserUpdateRequest } from '../types/user.types';
 
 // Get all users (admin only)
-export const getAllUsers = async (page = 0, size = 10): Promise<any> => {
+export const getAllUsers = async (page = 0, size = 10, search = ''): Promise<any> => {
   try {
-    const response = await api.get(`/users?page=${page}&size=${size}`);
+    const response = await api.get(`/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}`);
     return response.data;
   } catch (error) {
     throw error;

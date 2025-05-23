@@ -7,10 +7,11 @@ import { useToast } from '../../context/ToastContext';
 import ArticleTable from './ArticleTable';
 import Modal from '../../components/ui/Modal';
 import ConfirmModal from '../../components/ui/ConfirmModal';
-import ArticleDetailsModal from './ArticleDetailsModal';
+import ArticleDetailsLoader from './ArticleDetailsLoader';
 import SearchBar from '../../components/ui/SearchBar';
 import Pagination from '../../components/ui/Pagination';
 import type { ArticleCreateRequest } from '../../types/article.types';
+import ArticleForm from './ArticleForm';
 
 const ArticleList = () => {
   const { showToast } = useToast();
@@ -73,7 +74,7 @@ const ArticleList = () => {
       clearArticle();
       clearError();
     };
-  }, [clearArticle, clearError]);
+  }, []); // Empty dependency array means this only runs on unmount
 
   // Search handler with debounce
   const handleSearch = useCallback((term: string) => {
@@ -101,15 +102,10 @@ const ArticleList = () => {
     }
   }, [getArticleById, showToast]);
 
-  const handleViewClick = useCallback(async (id: number) => {
+  const handleViewClick = useCallback((id: number) => {
     setSelectedArticleId(id);
-    const success = await getArticleById(id);
-    if (success) {
-      setShowDetailsModal(true);
-    } else {
-      showToast('Failed to load article details', 'error');
-    }
-  }, [getArticleById, showToast]);
+    setShowDetailsModal(true);
+  }, []);
 
   const handleDeleteClick = useCallback((id: number) => {
     setSelectedArticleId(id);
@@ -192,6 +188,12 @@ const ArticleList = () => {
           article.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
+
+  // Handle modal close
+  const handleModalClose = useCallback(() => {
+    setShowDetailsModal(false);
+    setSelectedArticleId(null);
+  }, []);
 
   if (isLoading && (!articles || articles.content.length === 0)) {
     return (
@@ -285,11 +287,40 @@ const ArticleList = () => {
       {/* View Article Details Modal */}
       <Modal
         isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        title="Article Details"
-        size="xl"
+        onClose={handleModalClose}
+        size="2xl"
       >
-        {article && <ArticleDetailsModal article={article} />}
+        <div className="p-6">
+          {selectedArticleId && (
+            <ArticleDetailsLoader 
+              key={selectedArticleId}
+              articleId={selectedArticleId}
+              onError={() => {
+                handleModalClose();
+                showToast('Failed to load article details', 'error');
+              }}
+            />
+          )}
+        </div>
+      </Modal>
+
+      {/* Edit Article Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        size="2xl"
+      >
+        <div className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Edit Article</h2>
+          {article && (
+            <ArticleForm
+              initialData={article}
+              isSubmitting={isSubmitting}
+              onSubmit={handleEditSubmit}
+              error={error}
+            />
+          )}
+        </div>
       </Modal>
 
       {/* Delete Confirmation Modal */}
