@@ -298,11 +298,16 @@ const Register = () => {
           </div>
         </form>
         
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="text-primary-600 hover:underline">
-              Log in here
+              Sign in
+            </Link>
+          </p>
+          <p className="mt-2 text-sm text-gray-600">
+            <Link to="/forgot-password" className="text-primary-600 hover:underline">
+              Forgot password?
             </Link>
           </p>
         </div>

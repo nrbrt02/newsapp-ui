@@ -7,6 +7,7 @@ const HomePage = lazy(() => import('../pages/Home'));
 const AboutPage = lazy(() => import('../pages/About'));
 const LoginPage = lazy(() => import('../features/auth/Login'));
 const RegisterPage = lazy(() => import('../features/auth/Register'));
+const ForgotPasswordPage = lazy(() => import('../features/auth/ForgotPassword'));
 const ArticlePage = lazy(() => import('../pages/ArticlePage'));
 const NotFoundPage = lazy(() => import('../pages/NotFound'));
 
@@ -21,6 +22,7 @@ const AppRoutes = () => {
           <Route path="articles/:id" element={<ArticlePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
         {/* Admin routes */}

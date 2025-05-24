@@ -40,8 +40,12 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      // Redirect to login page if not already there
-      if (window.location.pathname !== '/login') {
+      // Only redirect to login for protected routes
+      const protectedRoutes = ['/admin', '/profile'];
+      const currentPath = window.location.pathname;
+      
+      if (protectedRoutes.some(route => currentPath.startsWith(route)) && 
+          window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }

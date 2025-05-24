@@ -157,6 +157,11 @@ const Login = () => {
                   {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
+              <div className="mt-2 text-right">
+                <Link to="/forgot-password" className="text-sm text-primary-600 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             
             <button
