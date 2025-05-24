@@ -8,12 +8,18 @@ import {
   getUserProfile,
   updateProfile,
   setInitialAuthState,
-  clearError
+  clearError,
+  verifyLogin,
+  verifyResetPassword,
+  resendCode
 } from '../features/auth/authSlice';
 import type { 
   LoginRequest, 
   RegisterRequest,
-  User
+  User,
+  VerifyLoginRequest,
+  VerifyResetPasswordRequest,
+  ResendCodeRequest
 } from '../types/auth.types';
 
 export const useAuth = () => {
@@ -29,8 +35,8 @@ export const useAuth = () => {
 
   const loginUser = async (credentials: LoginRequest) => {
     try {
-      await dispatch(login(credentials)).unwrap();
-      return true;
+      const response = await dispatch(login(credentials)).unwrap();
+      return response;
     } catch (error) {
       return false;
     }
@@ -95,6 +101,33 @@ export const useAuth = () => {
     }
   }, [dispatch]);
 
+  const verifyLoginCode = async (request: VerifyLoginRequest) => {
+    try {
+      await dispatch(verifyLogin(request)).unwrap();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const verifyResetPasswordCode = async (request: VerifyResetPasswordRequest) => {
+    try {
+      await dispatch(verifyResetPassword(request)).unwrap();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const resendVerificationCode = async (request: ResendCodeRequest) => {
+    try {
+      await dispatch(resendCode(request)).unwrap();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   return {
     user,
     token,
@@ -107,5 +140,8 @@ export const useAuth = () => {
     clearError: resetError,
     fetchUserProfile: memoizedFetchProfile,
     updateUserProfile: memoizedUpdateProfile,
+    verifyLoginCode,
+    verifyResetPasswordCode,
+    resendVerificationCode,
   };
 };

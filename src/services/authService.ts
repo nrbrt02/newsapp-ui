@@ -3,16 +3,18 @@ import type {
   LoginRequest, 
   LoginResponse, 
   RegisterRequest, 
-  User 
+  User,
+  VerifyLoginRequest,
+  VerifyResetPasswordRequest,
+  ResendCodeRequest
 } from '../types/auth.types';
 
-const API_URL = "http://localhost:8080/api/"
 export const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
   try {
     const response = await api.post<LoginResponse>('/auth/login', credentials);
     
-    // Store token and user data in localStorage
-    if (response.data.token) {
+    // Only store token and user data if 2FA is not required
+    if (response.data.token && !response.data.requiresTwoFactor) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data));
     }
@@ -80,4 +82,29 @@ export const getStoredUser = (): LoginResponse | null => {
 // Check if user is authenticated
 export const isAuthenticated = (): boolean => {
   return !!localStorage.getItem('token');
+};
+
+export const verifyLogin = async (data: VerifyLoginRequest): Promise<LoginResponse> => {
+  const response = await api.post<LoginResponse>('/auth/2fa/verify-login', data);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data));
+  }
+  return response.data;
+};
+
+export const verifyResetPassword = async (request: VerifyResetPasswordRequest): Promise<void> => {
+  try {
+    await api.post('/auth/verify-reset-password', request);
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const resendCode = async (request: ResendCodeRequest): Promise<void> => {
+  try {
+    await api.post('/auth/resend-code', request);
+  } catch (error) {
+    throw error;
+  }
 };

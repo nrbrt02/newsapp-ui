@@ -1,13 +1,12 @@
 import axios from 'axios';
 
-// Base API configuration
-const API_URL = 'http://localhost:8080/api';
-
-export const api = axios.create({
-  baseURL: API_URL,
+// Base API configuration - using relative URL for proxy
+const api = axios.create({
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable sending cookies with requests
 });
 
 // Add a request interceptor to include the token in requests

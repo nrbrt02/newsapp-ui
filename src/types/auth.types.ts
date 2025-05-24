@@ -19,13 +19,30 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface VerifyLoginRequest {
+  email: string;
+  code: string;
+}
+
+export interface VerifyResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface ResendCodeRequest {
+  username: string;
+}
+
 export interface LoginResponse {
-  token: string;
-  type: string;
   id: number;
   username: string;
   email: string;
   role: UserRole;
+  requiresTwoFactor: boolean;
+  message?: string;
+  token?: string;
+  type?: string;
 }
 
 export interface RegisterRequest {
