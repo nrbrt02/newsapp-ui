@@ -63,19 +63,19 @@ export const transformWriterArticlesEngagement = (data: WriterArticlesEngagement
   return [{
     date: data.dailyViews.date,
     views: data.dailyViews.count,
-    comments: Object.values(data.dailyComments).reduce((sum, count) => sum + count, 0)
+    comments: data.dailyComments.count
   }];
 };
 
 export const transformWriterCategoriesPerformance = (data: WriterCategoriesPerformance | null) => {
   if (!data?.categoryEngagement) return [];
   
-  return [{
-    category: data.categoryEngagement.category,
-    engagement: data.categoryEngagement.engagement,
-    views: data.categoryViews.views,
-    comments: Object.values(data.categoryComments).reduce((sum, count) => sum + count, 0)
-  }];
+  return Object.entries(data.categoryEngagement).map(([category, engagement]) => ({
+    category,
+    engagement,
+    views: data.categoryViews[category] || 0,
+    comments: data.categoryComments[category] || 0
+  }));
 };
 
 export const formatNumber = (num: number): string => {

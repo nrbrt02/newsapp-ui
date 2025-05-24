@@ -83,13 +83,16 @@ export interface WriterDashboardStats {
   totalLikes: number;
   articlesByStatus: Record<string, number>;
   topArticles: Record<string, number>;
-  categoryPerformance: {
+  categoryPerformance: Record<string, number>;
+  dailyViews: null | {
+    date: string;
     count: number;
-    category: string;
   };
-  dailyViews: Record<string, number> | null;
-  dailyComments: Record<string, number> | null;
-  readerEngagement: Record<string, number> | null;
+  dailyComments: null | {
+    date: string;
+    count: number;
+  };
+  readerEngagement: null | Record<string, number>;
 }
 
 export interface WriterArticlesPerformance {
@@ -97,52 +100,26 @@ export interface WriterArticlesPerformance {
   viewCounts: Record<string, number>;
   topArticles: Record<string, number>;
   articleCounts: Record<string, number>;
-  data?: Array<{
-    article: string;
-    views: number;
-    comments: number;
-  }>;
 }
 
 export interface WriterArticlesEngagement {
-  readerFeedback: Record<string, any>;
+  readerFeedback: Array<[string, number]>;
   dailyViews: {
     date: string;
     count: number;
   };
-  dailyComments: Record<string, number>;
-  engagementByArticle: {
-    article: string;
-    comments: number;
-  };
-  data?: Array<{
+  dailyComments: {
     date: string;
-    views: number;
-    comments: number;
-    likes: number;
-  }>;
+    count: number;
+  };
+  engagementByArticle: Record<string, number>;
 }
 
 export interface WriterCategoriesPerformance {
-  categoryEngagement: {
-    engagement: number;
-    category: string;
-  };
+  categoryEngagement: Record<string, number>;
   categoryComments: Record<string, number>;
-  topCategories: {
-    count: number;
-    category: string;
-  };
-  categoryViews: {
-    views: number;
-    category: string;
-  };
-  data?: Array<{
-    category: string;
-    articles: number;
-    engagement: number;
-    views: number;
-  }>;
+  topCategories: Record<string, number>;
+  categoryViews: Record<string, number>;
 }
 
 export interface WriterReaderInsights {

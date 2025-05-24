@@ -323,26 +323,18 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Reader Insights */}
+            {/* Reader Feedback */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Reader Insights</h2>
+              <h2 className="text-lg font-semibold mb-4">Reader Feedback</h2>
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Top Reading Time</h3>
-                  <p className="text-lg font-semibold">{writerStats.readerInsights?.topReadingTime || 'N/A'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Average Reading Time</h3>
-                  <p className="text-lg font-semibold">{writerStats.readerInsights?.averageReadingTime || 'N/A'}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Most Engaged Topics</h3>
-                  <ul className="mt-2 space-y-1">
-                    {writerStats.readerInsights?.topTopics?.map((topic: string, index: number) => (
-                      <li key={index} className="text-sm text-gray-600">{topic}</li>
-                    )) || <li className="text-sm text-gray-500">No topics available</li>}
-                  </ul>
-                </div>
+                {writerStats.articlesEngagement?.readerFeedback?.map(([article, feedback], index) => (
+                  <div key={index} className="border-b pb-2 last:border-b-0">
+                    <h3 className="text-sm font-medium text-gray-500 truncate">{article}</h3>
+                    <p className="text-lg font-semibold">{feedback} feedback</p>
+                  </div>
+                )) || (
+                  <p className="text-gray-500 text-center">No feedback available</p>
+                )}
               </div>
             </div>
           </div>
